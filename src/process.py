@@ -1,6 +1,6 @@
+import polars as pl
 import xlsxwriter
 
-from polars_utils import *
 from validity import *
 
 
@@ -52,7 +52,7 @@ def get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra):
         "endpoint_operating_system",  "endpoint_os_version",
         "tenable_display_operating_system",
         "entra_operatingsystem", "entra_operatingsystemversion",
-        "intune_last_check-in", "intune_primary_user_display_name", 
+        "intune_last_check_in", "intune_primary_user_display_name", 
         "endpoint_last_successful_scan",
         "tenable_first_observed", "tenable_last_observed", 
         "entra_registeredowners", "entra_registrationtime", "entra_approximatelastsignindatetime",
@@ -87,3 +87,8 @@ def get_df_entra_duplicate(df_entra):
     df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
     df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])
     return df_entra_duplicate
+
+def get_df_intune_duplicate(df_intune):
+    df_intune_duplicate = df_intune.filter(pl.struct("device").is_duplicated()).sort("device")
+    df_intune_duplicate = df_intune_duplicate.select(["device", "primary_user_email_address", "last_check_in", "device_id"])
+    return df_intune_duplicate

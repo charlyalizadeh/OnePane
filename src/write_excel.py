@@ -26,13 +26,14 @@ def _get_condition_true(workbook):
 
 
 
-def write_excel_all(df_device, df_invalid, df_rules, df_entra_duplicate, worksheet_name="Device List"):
+def write_excel_all(df_device, df_invalid, df_rules, df_entra_duplicate, df_intune_duplicate, worksheet_name="Device List"):
     today = datetime.today().strftime('%Y-%m-%d')
     with xlsxwriter.Workbook(f"./results/data_integrity_{today}.xlsx") as workbook:
         write_excel_device(workbook, df_device, worksheet_name)
         write_excel_invalid(workbook, df_invalid, worksheet_name)
         write_excel_rules(workbook, df_rules, worksheet_name)
         write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name)
+        write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name)
 
 def write_excel_device(workbook, df_device, worksheet_name):
     today = datetime.today().strftime('%Y-%m-%d')
@@ -82,11 +83,11 @@ def write_excel_device(workbook, df_device, worksheet_name):
     worksheet.conditional_format(f"$A$1:{last_cell}", condition_not_categorized)
 
 def write_excel_invalid(workbook, df_invalid, worksheet_name):
-    worksheet_invalid_name = f"{worksheet_name} invalid"
-    worksheet_invalid = workbook.add_worksheet(worksheet_invalid_name)
+    worksheet_name = f"{worksheet_name} invalid"
+    worksheet = workbook.add_worksheet(worksheet_name)
     df_invalid.write_excel(
             workbook=workbook,
-            worksheet=worksheet_invalid_name,
+            worksheet=worksheet,
             table_style="Table Style Light 8",
             autofit=True
     )
@@ -95,11 +96,11 @@ def write_excel_rules(workbook, df_rules, worksheet_name):
     condition_false = _get_condition_false(workbook)
     condition_true = _get_condition_true(workbook)
 
-    worksheet_rules_name = f"{worksheet_name} validity rules"
-    worksheet_rules = workbook.add_worksheet(worksheet_rules_name)
+    worksheet_name = f"{worksheet_name} validity rules"
+    worksheet = workbook.add_worksheet(worksheet_name)
     df_rules.write_excel(
         workbook=workbook,
-        worksheet=worksheet_rules_name,
+        worksheet=worksheet,
         table_style="Table Style Light 8",
         autofit=True,
         conditional_formats={
@@ -111,11 +112,11 @@ def write_excel_rules(workbook, df_rules, worksheet_name):
     )
 
 def write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name):
-    worksheet_entra_duplicate_name = f"{worksheet_name} entra duplicate"
-    worksheet_entra_duplicate = workbook.add_worksheet(worksheet_entra_duplicate_name)
+    worksheet_name = f"{worksheet_name} entra duplicate"
+    worksheet = workbook.add_worksheet(worksheet_name)
     df_entra_duplicate.write_excel(
         workbook=workbook,
-        worksheet=worksheet_entra_duplicate,
+        worksheet=worksheet,
         table_style="Table Style Light 8",
         autofit=True
     )
@@ -134,5 +135,33 @@ def write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name):
         "format": format_bg_red
     }
     last_cell = f"${xl_col_to_name(df_entra_duplicate.width - 1)}${df_entra_duplicate.height + 1}"
-    worksheet_entra_duplicate.conditional_format(f"$A$1:{last_cell}", condition_validity1)
-    worksheet_entra_duplicate.conditional_format(f"$A$1:{last_cell}", condition_validity2)
+    worksheet.conditional_format(f"$A$1:{last_cell}", condition_validity1)
+    worksheet.conditional_format(f"$A$1:{last_cell}", condition_validity2)
+
+def write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name):
+    worksheet_name = f"{worksheet_name} intune duplicate"
+    worksheet = workbook.add_worksheet(worksheet_name)
+    df_intune_duplicate.write_excel(
+        workbook=workbook,
+        worksheet=worksheet,
+        table_style="Table Style Light 8",
+        autofit=True
+    )
+
+    format_bg_red = workbook.add_format({"bg_color": "#F88379"}) # Unvalid row formatting
+    # Using OR condition somehow doesn't work.
+    # (Just like AND, that's why I used the * operator in `write_excel_device`)
+    condition_validity1 = {
+        "type": "formula",
+        "criteria": '=INDIRECT("B"&ROW())=False',
+        "format": format_bg_red
+    }
+    condition_validity2 = {
+        "type": "formula",
+        "criteria": '=ISBLANK(INDIRECT("C"&ROW()))',
+        "format": format_bg_red
+    }
+    last_cell = f"${xl_col_to_name(df_intune_duplicate.width - 1)}${df_intune_duplicate.height + 1}"
+    worksheet.conditional_format(f"$A$1:{last_cell}", condition_validity1)
+    worksheet.conditional_format(f"$A$1:{last_cell}", condition_validity2)
+

@@ -1,9 +1,8 @@
 import polars as pl
-from polars_utils import *
 
 
 def fix_column_names(df, exclude=[]):
-    rename_dict = {c:c.lower().replace(' ', '_') for c in df.columns if c not in exclude}
+    rename_dict = {c:c.lower().replace(' ', '_').replace('-', '_') for c in df.columns if c not in exclude}
     return df.rename(rename_dict)
 
 def clean_df_intune(df_intune):
@@ -11,7 +10,7 @@ def clean_df_intune(df_intune):
     df_intune = fix_column_names(df_intune)
     df_intune = df_intune.with_columns(pl.col("device").str.to_lowercase().alias("device"))
     df_intune = df_intune.with_columns(
-            (pl.col("last_check-in").str.split('.').list.first().str.to_date(format="%Y-%m-%d %H:%M:%S")).alias("last_check-in")
+            (pl.col("last_check_in").str.split('.').list.first().str.to_date(format="%Y-%m-%d %H:%M:%S")).alias("last_check_in")
     )
     return df_intune
 
