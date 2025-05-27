@@ -93,6 +93,11 @@ def get_df_endpoint_duplicate(df_endpoint):
     df_endpoint_duplicate = df_endpoint_duplicate.select(["device", "last_successful_scan"])
     return df_endpoint_duplicate
 
+def get_df_tenable_duplicate(df_tenable):
+    df_tenable_duplicate = df_tenable.filter(pl.struct("device").is_duplicated()).sort("device")
+    df_tenable_duplicate = df_tenable_duplicate.select(["device", "last_observed"])
+    return df_tenable_duplicate
+
 def get_df_entra_duplicate(df_entra):
     df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
     df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])

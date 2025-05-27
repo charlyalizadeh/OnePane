@@ -27,7 +27,7 @@ def _get_condition_true(workbook):
 
 
 def write_excel_all(df_device, df_invalid, df_rules,
-                    df_intune_duplicate, df_endpoint_duplicate, df_entra_duplicate,
+                    df_intune_duplicate, df_endpoint_duplicate, df_tenable_duplicate, df_entra_duplicate,
                     worksheet_name="Device List"):
     today = datetime.today().strftime('%Y-%m-%d')
     with xlsxwriter.Workbook(f"./results/data_integrity_{today}.xlsx") as workbook:
@@ -36,6 +36,7 @@ def write_excel_all(df_device, df_invalid, df_rules,
         write_excel_rules(workbook, df_rules, worksheet_name)
         write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name)
         write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_name)
+        write_excel_tenable_duplicate(workbook, df_tenable_duplicate, worksheet_name)
         write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name)
 
 def write_excel_device(workbook, df_device, worksheet_name):
@@ -139,6 +140,16 @@ def write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_na
     worksheet_name = f"{worksheet_name} endpoint duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
     df_endpoint_duplicate.write_excel(
+        workbook=workbook,
+        worksheet=worksheet,
+        table_style="Table Style Light 8",
+        autofit=True
+    )
+
+def write_excel_tenable_duplicate(workbook, df_tenable_duplicate, worksheet_name):
+    worksheet_name = f"{worksheet_name} tenable duplicate"
+    worksheet = workbook.add_worksheet(worksheet_name)
+    df_tenable_duplicate.write_excel(
         workbook=workbook,
         worksheet=worksheet,
         table_style="Table Style Light 8",
