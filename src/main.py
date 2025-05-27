@@ -25,8 +25,13 @@ if __name__ == "__main__":
     df_device = get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra)
     df_invalid = get_df_invalid(df_device, validity_rules)
     df_rules = get_df_rules(validity_rules)
-    df_entra_duplicate = get_df_entra_duplicate(df_entra)
     df_intune_duplicate = get_df_intune_duplicate(df_intune)
+    df_endpoint_duplicate = get_df_endpoint_duplicate(df_endpoint)
+    df_entra_duplicate = get_df_entra_duplicate(df_entra)
 
     # Export
-    write_excel_all(df_device, df_invalid, df_rules, df_entra_duplicate, df_intune_duplicate, "Device List")
+    write_excel_all(
+        df_device, df_invalid, df_rules,
+        df_intune_duplicate, df_endpoint_duplicate, df_entra_duplicate,
+        "Device List"
+    )

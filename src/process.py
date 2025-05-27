@@ -83,12 +83,17 @@ def get_df_invalid(df_device, validity_rules):
 
     return df_invalid
 
-def get_df_entra_duplicate(df_entra):
-    df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
-    df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])
-    return df_entra_duplicate
-
 def get_df_intune_duplicate(df_intune):
     df_intune_duplicate = df_intune.filter(pl.struct("device").is_duplicated()).sort("device")
     df_intune_duplicate = df_intune_duplicate.select(["device", "primary_user_email_address", "last_check_in", "device_id"])
     return df_intune_duplicate
+
+def get_df_endpoint_duplicate(df_endpoint):
+    df_endpoint_duplicate = df_endpoint.filter(pl.struct("device").is_duplicated()).sort("device")
+    df_endpoint_duplicate = df_endpoint_duplicate.select(["device", "last_successful_scan"])
+    return df_endpoint_duplicate
+
+def get_df_entra_duplicate(df_entra):
+    df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
+    df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])
+    return df_entra_duplicate
