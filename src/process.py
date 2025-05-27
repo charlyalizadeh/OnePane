@@ -1,17 +1,14 @@
-import polars as pl
 import xlsxwriter
 
 from polars_utils import *
 from validity import *
 
 
-def get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra):
-    # Normalize the device column names
-    df_intune = df_intune.rename({"Device name": "device"})
-    df_endpoint = df_endpoint.rename({"Computer Name": "device"})
-    df_tenable = df_tenable.rename({"display_fqdn": "device"})
-    df_entra = df_entra.rename({"displayName": "device"})
+def add_prefix_column_names(df, prefix, exclude=[]):
+    rename_dict = {c:f'{prefix}{c}' for c in df.columns if c not in exclude}
+    return df.rename(rename_dict)
 
+def get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra):
     # Add prefix to column names to know where the data is from
     df_intune = add_prefix_column_names(df_intune, "intune_", ["device"])
     df_endpoint = add_prefix_column_names(df_endpoint, "endpoint_", ["device"])
@@ -24,37 +21,6 @@ def get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra):
     df_tenable = df_tenable.with_columns(pl.Series(name="tenable", values=[True] * df_tenable.height))
     df_entra = df_entra.with_columns(pl.Series(name="entra", values=[True] * df_entra.height))
 
-    # Normalize column names
-    df_intune = fix_column_names(df_intune)
-    df_endpoint = fix_column_names(df_endpoint)
-    df_tenable = fix_column_names(df_tenable)
-    df_entra = fix_column_names(df_entra)
-
-    # Normalize devices name
-    df_intune = df_intune.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-    df_endpoint = df_endpoint.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-    df_tenable = df_tenable.with_columns(pl.col("device").str.to_lowercase().str.split('.').list.first().alias("device"))
-    df_entra = df_entra.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-
-    # Clean date data
-    df_intune = df_intune.with_columns(
-            (pl.col("intune_last_check-in").str.split('.').list.first().str.to_date(format="%Y-%m-%d %H:%M:%S")).alias("intune_last_check-in")
-    )
-    df_endpoint = df_endpoint.with_columns(
-            (pl.col("endpoint_last_successful_scan").str.to_date(format="%b %d, %Y %I:%M %p")).alias("endpoint_last_successful_scan")
-    )
-    df_tenable = df_tenable.with_columns(
-            (pl.col("tenable_first_observed").str.split('.').list.first().str.to_date(format="%Y-%m-%dT%H:%M:%S")).alias("tenable_first_observed")
-    )
-    df_tenable = df_tenable.with_columns(
-            (pl.col("tenable_last_observed").str.split('.').list.first().str.to_date(format="%Y-%m-%dT%H:%M:%S")).alias("tenable_last_observed")
-    )
-    df_entra = df_entra.with_columns(
-            (pl.col("entra_registrationtime").str.to_date(format="%Y-%m-%d %I:%M %p", strict=False)).alias("entra_registrationtime")
-    )
-    df_entra = df_entra.with_columns(
-            (pl.col("entra_approximatelastsignindatetime").str.to_date(format="%Y-%m-%d %I:%M %p")).alias("entra_approximatelastsignindatetime")
-    )
 
     # Join all the data
     df_device = df_intune.join(df_endpoint, on="device", how="full", coalesce=True)
@@ -77,6 +43,21 @@ def get_df_device(validity_rules, df_intune, df_endpoint, df_tenable, df_entra):
     validity_rules_list = {k: [v["intune"], v["endpoint"], v["tenable"], v["entra"]] for k, v in validity_rules.items()}
     func1 = lambda row: check_device_validity(row, validity_rules_list)
     df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1).alias("validity"))
+
+    # Select desired columns
+    df_device = df_device.select([
+        "device", "category",
+        "intune", "endpoint", "tenable", "entra",
+        "intune_os", "intune_os_version",
+        "endpoint_operating_system",  "endpoint_os_version",
+        "tenable_display_operating_system",
+        "entra_operatingsystem", "entra_operatingsystemversion",
+        "intune_last_check-in", "intune_primary_user_display_name", 
+        "endpoint_last_successful_scan",
+        "tenable_first_observed", "tenable_last_observed", 
+        "entra_registeredowners", "entra_registrationtime", "entra_approximatelastsignindatetime",
+        "validity"
+    ])
 
 
     return df_device
@@ -103,5 +84,6 @@ def get_df_invalid(df_device, validity_rules):
     return df_invalid
 
 def get_df_entra_duplicate(df_entra):
-    df_entra = df_entra.filter(pl.struct("displayName").is_duplicated())
-    return df_entra
+    df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
+    df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])
+    return df_entra_duplicate
