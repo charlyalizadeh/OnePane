@@ -27,16 +27,17 @@ def _get_condition_true(workbook):
 
 
 def write_excel_all(df_device, df_invalid, df_rules,
-                    df_intune_duplicate, df_endpoint_duplicate, df_tenable_duplicate, df_entra_duplicate,
+                    df_ad_computer_duplicate, df_intune_duplicate, df_endpoint_duplicate, df_tenable_sensor_duplicate, df_entra_duplicate,
                     worksheet_name="Device List"):
     today = datetime.today().strftime('%Y-%m-%d')
     with xlsxwriter.Workbook(f"./results/data_integrity_{today}.xlsx") as workbook:
         write_excel_device(workbook, df_device, worksheet_name)
         write_excel_invalid(workbook, df_invalid, worksheet_name)
         write_excel_rules(workbook, df_rules, worksheet_name)
+        write_excel_ad_computer_duplicate(workbook, df_ad_computer_duplicate, worksheet_name)
         write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name)
         write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_name)
-        write_excel_tenable_duplicate(workbook, df_tenable_duplicate, worksheet_name)
+        write_excel_tenable_sensor_duplicate(workbook, df_tenable_sensor_duplicate, worksheet_name)
         write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name)
 
 def write_excel_device(workbook, df_device, worksheet_name):
@@ -57,9 +58,10 @@ def write_excel_device(workbook, df_device, worksheet_name):
         table_style="Table Style Light 8",
         autofit=True,
         conditional_formats={
+            "ad_computer": [condition_false, condition_true],
             "intune": [condition_false, condition_true],
             "endpoint": [condition_false, condition_true],
-            "tenable": [condition_false, condition_true],
+            "tenable_sensor": [condition_false, condition_true],
             "entra": [condition_false, condition_true],
             "device": condition_duplicate
         }
@@ -72,7 +74,7 @@ def write_excel_device(workbook, df_device, worksheet_name):
     format_bg_red = workbook.add_format({"bg_color": "#F88379"}) # Unvalid row formatting
     condition_validity = {
         "type": "formula",
-        "criteria": '=(INDIRECT("V"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
+        "criteria": '=(INDIRECT("W"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
         "format": format_bg_red
     }
     last_cell = f"${xl_col_to_name(df_device.width - 1)}${df_device.height + 1}"
@@ -108,15 +110,26 @@ def write_excel_rules(workbook, df_rules, worksheet_name):
         table_style="Table Style Light 8",
         autofit=True,
         conditional_formats={
+            "ad_computer": [condition_false, condition_true],
             "intune": [condition_false, condition_true],
             "endpoint": [condition_false, condition_true],
-            "tenable": [condition_false, condition_true],
+            "tenable_sensor": [condition_false, condition_true],
             "entra": [condition_false, condition_true]
         }
     )
 
+def write_excel_ad_computer_duplicate(workbook, df_ad_computer_duplicate, worksheet_name):
+    worksheet_name = f"ADComputer duplicate"
+    worksheet = workbook.add_worksheet(worksheet_name)
+    df_ad_computer_duplicate.write_excel(
+        workbook=workbook,
+        worksheet=worksheet,
+        table_style="Table Style Light 8",
+        autofit=True
+    )
+
 def write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name):
-    worksheet_name = f"{worksheet_name} intune duplicate"
+    worksheet_name = f"Intune duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
     df_intune_duplicate.write_excel(
         workbook=workbook,
@@ -137,7 +150,7 @@ def write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name):
     worksheet.conditional_format(f"$A$1:{last_cell}", condition_validity)
 
 def write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_name):
-    worksheet_name = f"{worksheet_name} endpoint duplicate"
+    worksheet_name = f"Endpoint duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
     df_endpoint_duplicate.write_excel(
         workbook=workbook,
@@ -146,10 +159,10 @@ def write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_na
         autofit=True
     )
 
-def write_excel_tenable_duplicate(workbook, df_tenable_duplicate, worksheet_name):
-    worksheet_name = f"{worksheet_name} tenable duplicate"
+def write_excel_tenable_sensor_duplicate(workbook, df_tenable_sensor_duplicate, worksheet_name):
+    worksheet_name = f"Tenable Sensor duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
-    df_tenable_duplicate.write_excel(
+    df_tenable_sensor_duplicate.write_excel(
         workbook=workbook,
         worksheet=worksheet,
         table_style="Table Style Light 8",
@@ -157,7 +170,7 @@ def write_excel_tenable_duplicate(workbook, df_tenable_duplicate, worksheet_name
     )
 
 def write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name):
-    worksheet_name = f"{worksheet_name} entra duplicate"
+    worksheet_name = f"Entra duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
     df_entra_duplicate.write_excel(
         workbook=workbook,
