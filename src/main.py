@@ -1,6 +1,7 @@
 import polars as pl
 import xlsxwriter
 import json
+import argparse
 
 from write_excel import *
 from process import *
@@ -9,17 +10,25 @@ from import_data import *
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("tenableAccessKey")
+    parser.add_argument("tenableSecretKey")
+    args = parser.parse_args()
+    accessKey = args.tenableAccessKey
+    secretKey = args.tenableSecretKey
+
+
     validity_rules = json.load(open("./data/validity_rules.json", 'r'))
     # Import
     # The data are CSV extracted by hand on the different platforms
     # TODO: automate data import
-    import_ad_computer()
 
     # Create datafames
+    import_ad_computer()
     df_ad_computer = pl.read_csv('./data/ADComputer.csv')
     df_intune = pl.read_csv('./data/Intune.csv')
     df_endpoint = pl.read_csv('./data/Endpoint.csv')
-    df_tenable_sensor = pl.read_csv('./data/TenableSensor.csv')
+    df_tenable_sensor = import_tenable_sensors(accessKey, secretKey)
     df_entra = pl.read_csv('./data/MicrosoftEntra.csv')
 
     # Clean

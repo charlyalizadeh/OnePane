@@ -29,7 +29,7 @@ def clean_df_endpoint(df_endpoint):
     )
     return df_endpoint
 
-def clean_df_tenable_sensor(df_tenable_sensor):
+def clean_df_tenable_sensor_csv(df_tenable_sensor):
     df_tenable_sensor = df_tenable_sensor.rename({"Agent Name": "device"})
     df_tenable_sensor = fix_column_names(df_tenable_sensor)
     df_tenable_sensor = df_tenable_sensor.with_columns(pl.col("device").str.to_lowercase().str.split('.').list.first().alias("device"))
@@ -39,6 +39,15 @@ def clean_df_tenable_sensor(df_tenable_sensor):
     df_tenable_sensor = df_tenable_sensor.with_columns(
             (pl.col("last_connect").str.split('.').list.first().str.to_date(format="%Y-%m-%dT%H:%M:%S")).alias("last_connect")
     )
+    return df_tenable_sensor
+
+def clean_df_tenable_sensor(df_tenable_sensor):
+    df_tenable_sensor = df_tenable_sensor.rename({"name": "device"})
+    df_tenable_sensor = fix_column_names(df_tenable_sensor)
+    df_tenable_sensor = df_tenable_sensor.with_columns(pl.col("device").str.to_lowercase())
+    df_tenable_sensor = df_tenable_sensor.with_columns(pl.from_epoch("linked_on", time_unit="ms").alias("linked_on"))
+    df_tenable_sensor = df_tenable_sensor.with_columns(pl.from_epoch("last_connect", time_unit="ms").alias("last_connect"))
+    df_tenable_sensor = df_tenable_sensor.with_columns(pl.from_epoch("last_scanned", time_unit="ms").alias("last_scanned"))
     return df_tenable_sensor
 
 def clean_df_entra(df_entra):

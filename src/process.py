@@ -50,6 +50,7 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
     df_device = df_device.select([
         "device", "category",
         "ad_computer", "intune", "endpoint", "tenable_sensor", "entra",
+        "endpoint_ip_address", "tenable_sensor_ip",
         "intune_os", "intune_os_version",
         "endpoint_operating_system",  "endpoint_os_version",
         "tenable_sensor_platform",

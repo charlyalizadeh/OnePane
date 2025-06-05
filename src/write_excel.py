@@ -74,7 +74,7 @@ def write_excel_device(workbook, df_device, worksheet_name):
     format_bg_red = workbook.add_format({"bg_color": "#F88379"}) # Unvalid row formatting
     condition_validity = {
         "type": "formula",
-        "criteria": '=(INDIRECT("W"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
+        "criteria": '=(INDIRECT("Y"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
         "format": format_bg_red
     }
     last_cell = f"${xl_col_to_name(df_device.width - 1)}${df_device.height + 1}"
