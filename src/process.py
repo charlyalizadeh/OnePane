@@ -96,6 +96,11 @@ def get_df_intune_duplicate(df_intune):
     df_intune_duplicate = df_intune_duplicate.select(["device", "primary_user_email_address", "last_check_in", "device_id"])
     return df_intune_duplicate
 
+def get_df_intune_duplicate_user(df_intune):
+    df_intune_duplicate_user = df_intune.filter(pl.struct("primary_user_display_name").is_duplicated()).sort("primary_user_display_name")
+    df_intune_duplicate_user = df_intune_duplicate_user.select(["device", "primary_user_display_name", "primary_user_email_address", "last_check_in", "device_id"])
+    return df_intune_duplicate_user
+
 def get_df_endpoint_duplicate(df_endpoint):
     df_endpoint_duplicate = df_endpoint.filter(pl.struct("device").is_duplicated()).sort("device")
     df_endpoint_duplicate = df_endpoint_duplicate.select(["device", "last_successful_scan"])

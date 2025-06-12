@@ -43,10 +43,12 @@ if __name__ == "__main__":
     df_endpoint_duplicate = get_df_endpoint_duplicate(df_endpoint)
     df_tenable_sensor_duplicate = get_df_tenable_sensor_duplicate(df_tenable_sensor)
     df_entra_duplicate = get_df_entra_duplicate(df_entra)
+    df_intune_duplicate_user = get_df_intune_duplicate_user(df_intune)
 
     # Export
     write_excel_all(
         df_device, df_invalid, df_rules,
         df_ad_computer_duplicate, df_intune_duplicate, df_endpoint_duplicate, df_tenable_sensor_duplicate, df_entra_duplicate,
+        df_intune_duplicate_user,
         "Device List"
     )
