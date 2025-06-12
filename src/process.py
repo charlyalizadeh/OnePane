@@ -61,8 +61,6 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
         "entra_registeredowners", "entra_registrationtime", "entra_approximatelastsignindatetime",
         "validity"
     ])
-
-
     return df_device
 
 def get_df_rules(validity_rules):
@@ -76,7 +74,6 @@ def get_df_rules(validity_rules):
             "entra": [v["entra"] for v in validity_rules.values()]
     }
     df_rules = pl.DataFrame(dict_rules)
-
     return df_rules
 
 def get_df_invalid(df_device, validity_rules):
@@ -84,7 +81,6 @@ def get_df_invalid(df_device, validity_rules):
     df_invalid = df_device.with_columns(pl.struct(pl.all()).map_elements(func2).alias("invalidity_reason"))
     df_invalid = df_invalid.filter(pl.col("invalidity_reason") != "Valid")
     df_invalid = df_invalid.select(["device", "invalidity_reason"])
-
     return df_invalid
 
 def get_df_ad_computer_duplicate(df_ad_computer):

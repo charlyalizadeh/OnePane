@@ -200,7 +200,7 @@ def write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name):
 def write_excel_intune_duplicate_user(workbook, df_intune_duplicate_user, worksheet_name):
     worksheet_name = f"Intune duplicate user"
     worksheet = workbook.add_worksheet(worksheet_name)
-    df_intune_duplicate_user.write_excel(
+    df_entra_duplicate.write_excel(
         workbook=workbook,
         worksheet=worksheet,
         table_style="Table Style Light 8",
@@ -208,8 +208,6 @@ def write_excel_intune_duplicate_user(workbook, df_intune_duplicate_user, worksh
     )
 
     format_bg_red = workbook.add_format({"bg_color": "#F88379"}) # Unvalid row formatting
-    # Using OR condition somehow doesn't work.
-    # (Just like AND, that's why I used the * operator in `write_excel_device`)
     condition_validity = {
         "type": "formula",
         "criteria": '=ISBLANK(INDIRECT("B"&ROW()))',
