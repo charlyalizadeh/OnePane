@@ -9,7 +9,8 @@ from write_excel import *
 from process import *
 from clean import clean_df
 from import_data import *
-from import_intune import *
+from import_intune import import_intune
+from import_entra import import_entra
 from chrome_webdriver import get_chrome_webdriver
 from config import *
 
@@ -33,6 +34,8 @@ if __name__ == "__main__":
     import_intune()
     print("Importing Tenable sensor.")
     import_tenable_sensors(accessKey, secretKey)
+    print("Import Entra ID device.")
+    import_entra()
 
     # CSV import
     print("Reading data into CSV:")

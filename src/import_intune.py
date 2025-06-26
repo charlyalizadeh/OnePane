@@ -11,7 +11,7 @@ from chrome_webdriver import get_chrome_webdriver, connect_microsoft
 from config import *
 
 
-def check_data_downloaded():
+def check_intune_data_downloaded():
     download_path = Path.home() / "Downloads"
     files = download_path.glob('**/*')
     for f in files:
@@ -63,11 +63,11 @@ def import_intune():
     sleep(0.5)
 
     # Put the file in the right directory
-    file = check_data_downloaded()
+    file = check_intune_data_downloaded()
     i = 0
     while not file:
         print(f"Searching for intune downloads{'.' * (i % 4)}{' ' * (3 - (i % 4))}", end="\r")
-        file = check_data_downloaded()
+        file = check_intune_data_downloaded()
         if file:
             print(f"File found ({file}).")
         sleep(1)
@@ -79,8 +79,9 @@ def import_intune():
         csv_name = zip_ref.namelist()[0]
         print(f"Extracting:\n  {file.name}\\{csv_name}\n  -->\n  {data_path}\n")
         zip_ref.extractall(data_path)
-        print(f"Renaming:\n  {data_path}\\{csv_name}\n  -->\n  {intune_path}")
+        print(f"Moving:\n  {data_path}\\{csv_name}\n  -->\n  {intune_path}")
         csv_path = data_path / csv_name
         csv_path.replace(intune_path)
     print(f"Deleting {file}")
     file.unlink()
+    driver.close()
