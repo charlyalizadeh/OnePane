@@ -19,16 +19,7 @@ def check_data_downloaded():
             return f
     return None
 
-def import_intune():
-    driver = get_chrome_webdriver()
-    driver.get("https://intune.microsoft.com/#home")
-    try:
-        cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
-        print("Connecting to Microsoft.")
-        connect_microsoft(driver)
-    except:
-        print("Already connected to microsoft.")
-
+def go_to_all_device(driver):
     # Click "Device"
     device_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "_weave_e_58")))
     device_button.click()
@@ -38,6 +29,18 @@ def import_intune():
     all_device_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[data-telemetryname="Menu-allDevices"]')))
     all_device_button.click()
     sleep(0.5)
+
+def import_intune():
+    driver = get_chrome_webdriver()
+    driver.get("https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/allDevices")
+    try:
+        cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
+        print("Connecting to Microsoft.")
+        connect_microsoft(driver)
+        driver.get("https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/allDevices")
+    except:
+        print("Already connected to microsoft.")
+
 
     # Switch to the Iframe
     iframe = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.NAME, "AllManagedDevices.ReactView")))
