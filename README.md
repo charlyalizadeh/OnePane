@@ -2,9 +2,10 @@
 
 Project to check if the following directory/software have the same users/devices:
 
-[ ] ActiveDirectory
+[x] ActiveDirectory
 [ ] ManageEngine ActiveDirectory
 [x] ManageEngine Endpoint
+[ ] ManageEngine SFPOnDemand
 [ ] OneDrive (SharePoint, OneDrive, Exchange)
 [x] Intune
 [x] Microsoft Entra
@@ -24,9 +25,10 @@ connect to Microsoft everytime we run this code, it is not optimal and in the ca
 of time Microsoft will lock the SMS code verification.
 To fix that problem we create a Chrome profile by copying the default one into this project directory.
 **IT IS VERY IMPORTANT THAT THE PROFILE DIRECTORY IS NOT IN THE DEFAULT CHROME DATA PATH**.
-Indeed for security reasons Chrome has deactivated automated controll for profile located in the default chrome data path.
+Indeed for security reasons Chrome has deactivated automated control for profile located in the default chrome data path.
 After creating a new profile we need to connect to Microsoft a first time. To do so you need to enter your email, password and the 
 code you'll recieve by SMS. This operation should only be done the first time you run this project on your computer.
+All this process is done automatically, you only need to enter your credentials **IN THE TERMINAL**.
 
 
 ## Implementation motivation
