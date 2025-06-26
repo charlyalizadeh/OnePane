@@ -2,6 +2,7 @@ import polars as pl
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 from datetime import datetime
+from config import *
 
 
 def _get_condition_false(workbook):
@@ -30,7 +31,7 @@ def write_excel_all(df_device, df_invalid, df_rules,
                     df_ad_computer_duplicate, df_intune_duplicate, df_endpoint_duplicate, df_tenable_sensor_duplicate, df_entra_duplicate, df_intune_duplicate_user,
                     worksheet_name="Device List"):
     today = datetime.today().strftime('%Y-%m-%d')
-    with xlsxwriter.Workbook(f"./results/data_integrity_{today}.xlsx") as workbook:
+    with xlsxwriter.Workbook(f"{PROJECT_PATH}/results/data_integrity_{today}.xlsx") as workbook:
         write_excel_device(workbook, df_device, worksheet_name)
         write_excel_invalid(workbook, df_invalid, worksheet_name)
         write_excel_rules(workbook, df_rules, worksheet_name)
@@ -75,7 +76,7 @@ def write_excel_device(workbook, df_device, worksheet_name):
     format_bg_red = workbook.add_format({"bg_color": "#F88379"}) # Unvalid row formatting
     condition_validity = {
         "type": "formula",
-        "criteria": '=(INDIRECT("Y"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
+        "criteria": '=(INDIRECT("AA"&ROW())=FALSE)*(INDIRECT("B"&ROW())<>"Not categorized")',
         "format": format_bg_red
     }
     last_cell = f"${xl_col_to_name(df_device.width - 1)}${df_device.height + 1}"
@@ -200,7 +201,7 @@ def write_excel_entra_duplicate(workbook, df_entra_duplicate, worksheet_name):
 def write_excel_intune_duplicate_user(workbook, df_intune_duplicate_user, worksheet_name):
     worksheet_name = f"Intune duplicate user"
     worksheet = workbook.add_worksheet(worksheet_name)
-    df_entra_duplicate.write_excel(
+    df_intune_duplicate_user.write_excel(
         workbook=workbook,
         worksheet=worksheet,
         table_style="Table Style Light 8",

@@ -59,6 +59,7 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
         "endpoint_last_successful_scan",
         "tenable_sensor_linked_on", "tenable_sensor_last_connect", 
         "entra_registeredowners", "entra_registrationtime", "entra_approximatelastsignindatetime",
+        "intune_serial_number", "endpoint_serial_number",
         "validity"
     ])
     return df_device

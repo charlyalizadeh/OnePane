@@ -1,6 +1,11 @@
 import polars as pl
 import subprocess
 import requests
+import json
+import webbrowser
+
+from config import * 
+
 
 def import_ad_computer():
     powershell_path = 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
@@ -11,7 +16,7 @@ def import_ad_computer():
     )
 
 def import_tenable_sensors(accessKey, secretKey):
-    url = "https://cloud.tenable.com/scanners/null/agents"
+    url = "https://cloud.tenable.com/scanners/null/agents?limit=1000"
     headers = {
         "accept": "application/json",
         "X-ApiKeys": f"accessKey={accessKey};secretKey={secretKey}"
@@ -24,4 +29,4 @@ def import_tenable_sensors(accessKey, secretKey):
             val = '|'.join([f"name:{g['name']};id:{g['id']}" for g in groups])
         response["agents"][i]["groups"] = val
     df = pl.from_dicts(response["agents"])
-    return df
+    df.write_csv(PROJECT_PATH / "data/TenableSensor.csv")

@@ -1,7 +1,7 @@
 def get_device_category(device):
-    if device.startswith('lap0'):
+    if device.startswith('lap0') or device.startswith('lapfr'):
         return "LAPTOP_FR"
-    elif device.startswith('lap6'):
+    elif device.startswith('lap6') or device.startswith('lapro'):
         return "LAPTOP_RO"
     elif device.startswith('arch'):
         return "Arch"
@@ -16,9 +16,9 @@ def get_device_category(device):
     elif "intaro" in device:
         return "Intaro"
     elif device.startswith('pf'):
-        return "Entra Device"
-    elif device.startswith('w10'):
         return "Windows Autopilot"
+    elif device.startswith('w10'):
+        return "Old not renamed device"
     else:
         return "Not categorized"
 
