@@ -1,19 +1,16 @@
 import polars as pl
-import xlsxwriter
-import json
 import argparse
-from pathlib import Path
-import sys
 
+from config import *
+from clean import clean_df
+from chrome_webdriver import get_chrome_webdriver
+from imports.import_ad import import_ad_computer
+from imports.import_tenable import import_tenable_sensors
+from imports.import_intune import import_intune
+from imports.import_entra import import_entra
+from imports.import_endpoint import import_endpoint
 from write_excel import *
 from process import *
-from clean import clean_df
-from import_data import *
-from import_intune import import_intune
-from import_entra import import_entra
-from import_endpoint import import_endpoint
-from chrome_webdriver import get_chrome_webdriver
-from config import *
 
 
 if __name__ == "__main__":

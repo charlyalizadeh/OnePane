@@ -1,13 +1,10 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from pathlib import Path
-import zipfile
-import shutil
 
-from chrome_webdriver import get_chrome_webdriver, connect_microsoft
+from chrome_webdriver import connect_microsoft
 from config import *
 
 def check_entra_data_download():
@@ -21,7 +18,7 @@ def check_entra_data_download():
 def import_entra(driver):
     driver.get("https://entra.microsoft.com/#view/Microsoft_AAD_Devices/DevicesMenuBlade/~/Devices/menuId/Devices")
     try:
-        cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
+        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
         print("Connecting to Microsoft.")
         connect_microsoft(driver)
         driver.get("https://entra.microsoft.com/#view/Microsoft_AAD_Devices/DevicesMenuBlade/~/Devices/menuId/Devices")

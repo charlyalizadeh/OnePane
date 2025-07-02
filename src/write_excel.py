@@ -1,4 +1,3 @@
-import polars as pl
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 from datetime import datetime
@@ -43,7 +42,6 @@ def write_excel_all(df_device, df_invalid, df_rules,
         write_excel_intune_duplicate_user(workbook, df_intune_duplicate_user, worksheet_name)
 
 def write_excel_device(workbook, df_device, worksheet_name):
-    today = datetime.today().strftime('%Y-%m-%d')
     worksheet = workbook.add_worksheet(worksheet_name)
 
     condition_false = _get_condition_false(workbook)

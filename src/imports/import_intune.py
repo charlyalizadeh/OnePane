@@ -1,13 +1,11 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from pathlib import Path
 import zipfile
-import shutil
 
-from chrome_webdriver import get_chrome_webdriver, connect_microsoft
+from chrome_webdriver import connect_microsoft
 from config import *
 
 
@@ -33,7 +31,7 @@ def go_to_all_device(driver):
 def import_intune(driver):
     driver.get("https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/allDevices")
     try:
-        cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
+        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
         print("Connecting to Microsoft.")
         connect_microsoft(driver)
         driver.get("https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/allDevices")

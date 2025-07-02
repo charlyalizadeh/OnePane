@@ -1,14 +1,10 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from pathlib import Path
-import zipfile
-import shutil
-import requests
 
-from chrome_webdriver import get_chrome_webdriver, connect_microsoft
+from chrome_webdriver import connect_manageengine_endpoint
 from config import *
 
 
@@ -23,7 +19,7 @@ def check_endpoint_data_download():
 def import_endpoint(driver):
     driver.get("https://endpointcentral.manageengine.com/webclient#/uems/inventory/computers")
     try:
-        signin_box = WebDriverWait(driver, 5).until(EC.element_be_clickable(By.ID, "login_id"))
+        WebDriverWait(driver, 5).until(EC.element_be_clickable(By.ID, "login_id"))
         print("Connecting to ManageEngine Endpoint Central")
         connect_manageengine_endpoint(driver)
     except:
