@@ -18,8 +18,7 @@ def check_entra_data_download():
             return f
     return None
 
-def import_entra():
-    driver = get_chrome_webdriver()
+def import_entra(driver):
     driver.get("https://entra.microsoft.com/#view/Microsoft_AAD_Devices/DevicesMenuBlade/~/Devices/menuId/Devices")
     try:
         cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
@@ -71,4 +70,3 @@ def import_entra():
     entra_path = Path(f"{PROJECT_PATH}/data/MicrosoftEntra.csv")
     print(f"Moving:\n  ~/Downloads/{file}\n  -->\n  {entra_path}")
     file.replace(entra_path)
-    driver.close()

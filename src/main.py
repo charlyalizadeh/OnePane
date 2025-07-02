@@ -11,6 +11,7 @@ from clean import clean_df
 from import_data import *
 from import_intune import import_intune
 from import_entra import import_entra
+from import_endpoint import import_endpoint
 from chrome_webdriver import get_chrome_webdriver
 from config import *
 
@@ -28,14 +29,18 @@ if __name__ == "__main__":
     # TODO: automate data import
 
     # Automated import
+    driver = get_chrome_webdriver()
     print("Importing AD Computer.")
     import_ad_computer()
     print("Importing Intune devices.")
-    import_intune()
+    import_intune(driver)
+    print("Importing ManageEngine Endpoint devices")
+    import_endpoint(driver)
     print("Importing Tenable sensor.")
     import_tenable_sensors(accessKey, secretKey)
     print("Import Entra ID device.")
-    import_entra()
+    import_entra(driver)
+    driver.close()
 
     # CSV import
     print("Reading data into CSV:")

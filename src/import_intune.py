@@ -30,8 +30,7 @@ def go_to_all_device(driver):
     all_device_button.click()
     sleep(0.5)
 
-def import_intune():
-    driver = get_chrome_webdriver()
+def import_intune(driver):
     driver.get("https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/allDevices")
     try:
         cant_access_account = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "cantAccessAccount")))
@@ -84,4 +83,3 @@ def import_intune():
         csv_path.replace(intune_path)
     print(f"Deleting {file}")
     file.unlink()
-    driver.close()
