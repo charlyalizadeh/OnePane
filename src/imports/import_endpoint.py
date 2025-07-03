@@ -19,7 +19,7 @@ def check_endpoint_data_download():
 def import_endpoint(driver):
     driver.get("https://endpointcentral.manageengine.com/webclient#/uems/inventory/computers")
     try:
-        WebDriverWait(driver, 5).until(EC.element_be_clickable(By.ID, "login_id"))
+        WebDriverWait(driver, 10).until(EC.element_be_clickable(By.ID, "login_id"))
         print("Connecting to ManageEngine Endpoint Central")
         connect_manageengine_endpoint(driver)
     except:
