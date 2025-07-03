@@ -81,7 +81,6 @@ def connect_microsoft(driver, url="https://intune.microsoft.com/"):
 
 def connect_manageengine_endpoint(driver, url="https://endpointcentral.manageengine.com/webclient#/uems/home"):
     email = input("Email: ")
-    password = getpass()
     driver.get(url)
 
     # Mail
@@ -89,7 +88,6 @@ def connect_manageengine_endpoint(driver, url="https://endpointcentral.manageeng
     login_input.send_keys(email)
 
     # Then use notification push (TODO: manage different connection method)
-
 
 def copy_chrome_default_profile():
     profile_path = PROJECT_CHROME_PROFILE_PATH / PROJECT_CHROME_PROFILE_NAME
