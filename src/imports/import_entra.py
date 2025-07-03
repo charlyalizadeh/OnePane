@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from pathlib import Path
+import datetime
 
 from chrome_webdriver import connect_microsoft
 from config import *
@@ -48,12 +49,25 @@ def import_entra(driver):
     driver.get("https://entra.microsoft.com/#view/Microsoft_AAD_IAM/TasksListBlade/asyncTaskType~/%5B%22DeviceExport%22%5D")
 
     # Get the first element in the device export table
-    first_row = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'tr[tabindex="0"][aria-rowindex="1"]')))
-    first_row.click()
+    today = datetime.datetime.today().date()
+    today_str = f"{today.year}-{today.month}-{today.day}"
+    filename = f"exportDevice_{today_str}.csv"
+    print(filename)
+    last_row = WebDriverWait(driver, 120).until(EC.element_to_be_clickable((By.XPATH, f'(//div[contains(text(), "{filename}")])[last()]')))
+    last_row.click()
 
-    # Click "Download results"
-    download_results_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[role="link"][class="fxs-fileDownloadLink"]')))
-    download_results_button.click()
+    # Click "Download results", ugly af
+    i = 0
+    downloaded = False
+    while not downloaded:
+        try:
+            download_results_button = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[role="link"][class="fxs-fileDownloadLink"]')))
+            download_results_button.click()
+            downloaded = True
+        except:
+            print(f"Waiting for device export{'.' * (i % 4)}{' ' * (3 - (i % 4))}", end="\r")
+            i += 1
+            driver.refresh()
 
     file = check_entra_data_download()
     i = 0
