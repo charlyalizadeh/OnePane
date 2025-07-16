@@ -4,3 +4,4 @@ __pycache__
 *.json
 *.html
 .profile
+.credentials.json
