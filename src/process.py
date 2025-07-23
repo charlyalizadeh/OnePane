@@ -51,14 +51,14 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
         "device", "category",
         "ad_computer", "intune", "endpoint", "tenable_sensor", "entra",
         "endpoint_ip_address", "tenable_sensor_ip",
-        "intune_os", "intune_os_version",
+        "intune_operating_system", "intune_os_version",
         "endpoint_operating_system",  "endpoint_os_version",
         "tenable_sensor_platform",
-        "entra_operatingsystem", "entra_operatingsystemversion",
-        "intune_last_check_in", "intune_primary_user_display_name", 
+        "entra_operating_system", "entra_operating_system_version",
+        "intune_last_sync_date_time", "intune_email_address", 
         "endpoint_last_successful_scan",
         "tenable_sensor_linked_on", "tenable_sensor_last_connect", 
-        "entra_registeredowners", "entra_registrationtime", "entra_approximatelastsignindatetime",
+        "entra_registration_date_time", "entra_approximate_last_sign_in_date_time",
         "intune_serial_number", "endpoint_serial_number",
         "validity"
     ])
@@ -90,12 +90,12 @@ def get_df_ad_computer_duplicate(df_ad_computer):
 
 def get_df_intune_duplicate(df_intune):
     df_intune_duplicate = df_intune.filter(pl.struct("device").is_duplicated()).sort("device")
-    df_intune_duplicate = df_intune_duplicate.select(["device", "primary_user_email_address", "last_check_in", "device_id"])
+    df_intune_duplicate = df_intune_duplicate.select(["device", "email_address", "last_sync_date_time", "id"])
     return df_intune_duplicate
 
 def get_df_intune_duplicate_user(df_intune):
-    df_intune_duplicate_user = df_intune.filter(pl.struct("primary_user_display_name").is_duplicated()).sort("primary_user_display_name")
-    df_intune_duplicate_user = df_intune_duplicate_user.select(["device", "primary_user_display_name", "primary_user_email_address", "last_check_in", "device_id"])
+    df_intune_duplicate_user = df_intune.filter(pl.struct("user_principal_name").is_duplicated()).sort("user_principal_name")
+    df_intune_duplicate_user = df_intune_duplicate_user.select(["device", "user_principal_name", "email_address", "last_sync_date_time", "id"])
     return df_intune_duplicate_user
 
 def get_df_endpoint_duplicate(df_endpoint):
@@ -110,5 +110,5 @@ def get_df_tenable_sensor_duplicate(df_tenable_sensor):
 
 def get_df_entra_duplicate(df_entra):
     df_entra_duplicate = df_entra.filter(pl.struct("device").is_duplicated()).sort("device")
-    df_entra_duplicate = df_entra_duplicate.select(["device", "accountenabled", "registeredowners", "approximatelastsignindatetime", "objectid", "deviceid"])
+    df_entra_duplicate = df_entra_duplicate.select(["device", "account_enabled", "approximate_last_sign_in_date_time", "id", "device_id"])
     return df_entra_duplicate

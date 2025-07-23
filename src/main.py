@@ -1,8 +1,7 @@
 import polars as pl
-import argparse
 
 from config import *
-from clean import clean_df
+from clean import *
 from chrome_webdriver import get_chrome_webdriver
 from imports.import_ad import import_ad_computer
 from imports.import_tenable import import_tenable_sensors
@@ -14,29 +13,20 @@ from process import *
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("tenableAccessKey")
-    parser.add_argument("tenableSecretKey")
-    args = parser.parse_args()
-    accessKey = args.tenableAccessKey
-    secretKey = args.tenableSecretKey
-
     # Import
-    # The data are CSV extracted by hand on the different platforms
-    # TODO: automate data import
 
     # Automated import
     driver = get_chrome_webdriver()
     print("Importing AD Computer.")
     import_ad_computer()
     print("Importing Intune devices.")
-    import_intune(driver)
+    import_intune()
     print("Importing ManageEngine Endpoint devices")
     import_endpoint(driver)
     print("Importing Tenable sensor.")
-    import_tenable_sensors(accessKey, secretKey)
+    import_tenable_sensors()
     print("Import Entra ID device.")
-    import_entra(driver)
+    import_entra()
     driver.close()
 
     # CSV import
@@ -54,7 +44,11 @@ if __name__ == "__main__":
 
     # Clean
     print("Cleaning the data.")
-    df_ad_computer, df_intune, df_endpoint, df_tenable_sensor, df_entra = clean_df(df_ad_computer, df_intune, df_endpoint, df_tenable_sensor, df_entra)
+    df_ad_computer = clean_df_ad_computer(df_ad_computer)
+    df_intune = clean_df_intune(df_intune)
+    df_endpoint = clean_df_endpoint(df_endpoint)
+    df_tenable_sensor = clean_df_tenable_sensor(df_tenable_sensor)
+    df_entra = clean_df_entra(df_entra)
 
     # Process
     print("Processing the data.")
