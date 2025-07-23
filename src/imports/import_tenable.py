@@ -4,7 +4,9 @@ import requests
 from config import * 
 
 
-def import_tenable_sensors(accessKey, secretKey):
+def import_tenable_sensors():
+    accessKey = CREDENTIALS["Tenable"]["accessKey"]
+    secretKey = CREDENTIALS["Tenable"]["secretKey"]
     url = "https://cloud.tenable.com/scanners/null/agents?limit=1000"
     headers = {
         "accept": "application/json",

@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 PROJECT_PATH = Path(__file__).parent.parent.resolve()
 CHROME_DATA_PATH = Path("~/AppData/Local/Google/Chrome").expanduser()
@@ -20,3 +21,5 @@ validity_rules = {
     "Windows Autopilot":      {"ad_computer": False, "intune": False, "endpoint": False, "tenable_sensor": False, "entra": True},
     "Old not renamed device": {"ad_computer": False, "intune": False, "endpoint": False, "tenable_sensor": False, "entra": False}
 }
+CREDENTIALS = json.load(open(".credentials.json", "r"))
+GRAPH_ACCESS_TOKEN = None
