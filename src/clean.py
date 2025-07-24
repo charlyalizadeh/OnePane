@@ -64,7 +64,6 @@ def clean_df_entra(df_entra):
     df_entra = df_entra.rename({"displayName": "device"})
     df_entra = fix_column_names_pascal_case(df_entra)
     df_entra = df_entra.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-    #2024-12-27T19:19:23Z
     df_entra = df_entra.with_columns(
             (pl.col("registration_date_time") \
                .str.replace("T", " ", literal=True) \
