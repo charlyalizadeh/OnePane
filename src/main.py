@@ -2,7 +2,6 @@ import polars as pl
 
 from config import *
 from clean import *
-from chrome_webdriver import get_chrome_webdriver
 from imports.import_ad import import_ad_computer
 from imports.import_tenable import import_tenable_sensors
 from imports.import_intune import import_intune
@@ -16,13 +15,12 @@ if __name__ == "__main__":
     # Import
 
     # Automated import
-    driver = get_chrome_webdriver()
     print("Importing AD Computer.")
     import_ad_computer()
     print("Importing Intune devices.")
     import_intune()
     print("Importing ManageEngine Endpoint devices")
-    import_endpoint(driver)
+    import_endpoint()
     print("Importing Tenable sensor.")
     import_tenable_sensors()
     print("Import Entra ID device.")
