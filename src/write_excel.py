@@ -27,14 +27,14 @@ def _get_condition_true(workbook):
 
 
 def write_excel_all(df_device, df_invalid, df_rules,
-                    df_ad_computer_duplicate, df_intune_duplicate, df_endpoint_duplicate, df_tenable_sensor_duplicate, df_entra_duplicate, df_intune_duplicate_user,
+                    df_ad_duplicate, df_intune_duplicate, df_endpoint_duplicate, df_tenable_sensor_duplicate, df_entra_duplicate, df_intune_duplicate_user,
                     worksheet_name="Device List"):
     today = datetime.today().strftime('%Y-%m-%d')
     with xlsxwriter.Workbook(f"{PROJECT_PATH}/results/data_integrity_{today}.xlsx") as workbook:
         write_excel_device(workbook, df_device, worksheet_name)
         write_excel_invalid(workbook, df_invalid, worksheet_name)
         write_excel_rules(workbook, df_rules, worksheet_name)
-        write_excel_ad_computer_duplicate(workbook, df_ad_computer_duplicate, worksheet_name)
+        write_excel_ad_duplicate(workbook, df_ad_duplicate, worksheet_name)
         write_excel_intune_duplicate(workbook, df_intune_duplicate, worksheet_name)
         write_excel_endpoint_duplicate(workbook, df_endpoint_duplicate, worksheet_name)
         write_excel_tenable_sensor_duplicate(workbook, df_tenable_sensor_duplicate, worksheet_name)
@@ -58,7 +58,7 @@ def write_excel_device(workbook, df_device, worksheet_name):
         table_style="Table Style Light 8",
         autofit=True,
         conditional_formats={
-            "ad_computer": [condition_false, condition_true],
+            "ad": [condition_false, condition_true],
             "intune": [condition_false, condition_true],
             "endpoint": [condition_false, condition_true],
             "tenable_sensor": [condition_false, condition_true],
@@ -110,7 +110,7 @@ def write_excel_rules(workbook, df_rules, worksheet_name):
         table_style="Table Style Light 8",
         autofit=True,
         conditional_formats={
-            "ad_computer": [condition_false, condition_true],
+            "ad": [condition_false, condition_true],
             "intune": [condition_false, condition_true],
             "endpoint": [condition_false, condition_true],
             "tenable_sensor": [condition_false, condition_true],
@@ -118,10 +118,10 @@ def write_excel_rules(workbook, df_rules, worksheet_name):
         }
     )
 
-def write_excel_ad_computer_duplicate(workbook, df_ad_computer_duplicate, worksheet_name):
+def write_excel_ad_duplicate(workbook, df_ad_duplicate, worksheet_name):
     worksheet_name = f"ADComputer duplicate"
     worksheet = workbook.add_worksheet(worksheet_name)
-    df_ad_computer_duplicate.write_excel(
+    df_ad_duplicate.write_excel(
         workbook=workbook,
         worksheet=worksheet,
         table_style="Table Style Light 8",

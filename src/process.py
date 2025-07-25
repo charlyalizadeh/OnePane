@@ -6,16 +6,16 @@ def add_prefix_column_names(df, prefix, exclude=[]):
     rename_dict = {c:f'{prefix}{c}' for c in df.columns if c not in exclude}
     return df.rename(rename_dict)
 
-def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_tenable_sensor, df_entra):
+def get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra):
     # Add prefix to column names to know where the data is from
-    df_ad_computer = add_prefix_column_names(df_ad_computer, "ad_computer_", ["device"])
+    df_ad = add_prefix_column_names(df_ad, "ad_", ["device"])
     df_intune = add_prefix_column_names(df_intune, "intune_", ["device"])
     df_endpoint = add_prefix_column_names(df_endpoint, "endpoint_", ["device"])
     df_tenable_sensor = add_prefix_column_names(df_tenable_sensor, "tenable_sensor_", ["device"])
     df_entra = add_prefix_column_names(df_entra, "entra_", ["device"])
 
     # Add column to check for where the device is present
-    df_ad_computer = df_ad_computer.with_columns(pl.Series(name="ad_computer", values=[True] * df_ad_computer.height))
+    df_ad = df_ad.with_columns(pl.Series(name="ad", values=[True] * df_ad.height))
     df_intune = df_intune.with_columns(pl.Series(name="intune", values=[True] * df_intune.height))
     df_endpoint = df_endpoint.with_columns(pl.Series(name="endpoint", values=[True] * df_endpoint.height))
     df_tenable_sensor = df_tenable_sensor.with_columns(pl.Series(name="tenable_sensor", values=[True] * df_tenable_sensor.height))
@@ -23,14 +23,14 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
 
 
     # Join all the data
-    df_device = df_ad_computer.join(df_intune, on="device", how="full", coalesce=True)
+    df_device = df_ad.join(df_intune, on="device", how="full", coalesce=True)
     df_device = df_device.join(df_endpoint, on="device", how="full", coalesce=True)
     df_device = df_device.join(df_tenable_sensor, on="device", how="full", coalesce=True)
     df_device = df_device.join(df_entra, on="device", how="full", coalesce=True)
 
     # Put `false` in the appartenance column if the device is not in the software
     df_device = df_device.with_columns(
-            (pl.col("ad_computer").fill_null(False)),
+            (pl.col("ad").fill_null(False)),
             (pl.col("intune").fill_null(False)),
             (pl.col("endpoint").fill_null(False)),
             (pl.col("tenable_sensor").fill_null(False)),
@@ -42,14 +42,14 @@ def get_df_device(validity_rules, df_ad_computer, df_intune, df_endpoint, df_ten
 
     # Add validity column
     # TODO: could be cleaner
-    validity_rules_list = {k: [v["ad_computer"], v["intune"], v["endpoint"], v["tenable_sensor"], v["entra"]] for k, v in validity_rules.items()}
+    validity_rules_list = {k: [v["ad"], v["intune"], v["endpoint"], v["tenable_sensor"], v["entra"]] for k, v in validity_rules.items()}
     func1 = lambda row: check_device_validity(row, validity_rules_list)
     df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1).alias("validity"))
 
     # Select desired columns
     df_device = df_device.select([
         "device", "category",
-        "ad_computer", "intune", "endpoint", "tenable_sensor", "entra",
+        "ad", "intune", "endpoint", "tenable_sensor", "entra",
         "endpoint_ip_address", "tenable_sensor_ip",
         "intune_operating_system", "intune_os_version",
         "endpoint_operating_system",  "endpoint_os_version",
@@ -68,7 +68,7 @@ def get_df_rules(validity_rules):
     categories = list(validity_rules.keys())
     dict_rules = {
             "category": categories,
-            "ad_computer": [v["ad_computer"] for v in validity_rules.values()],
+            "ad": [v["ad"] for v in validity_rules.values()],
             "intune": [v["intune"] for v in validity_rules.values()],
             "endpoint": [v["endpoint"] for v in validity_rules.values()],
             "tenable_sensor": [v["tenable_sensor"] for v in validity_rules.values()],
@@ -84,9 +84,9 @@ def get_df_invalid(df_device, validity_rules):
     df_invalid = df_invalid.select(["device", "invalidity_reason"])
     return df_invalid
 
-def get_df_ad_computer_duplicate(df_ad_computer):
-    df_ad_computer_duplicate = df_ad_computer.filter(pl.struct("device").is_duplicated()).sort("device")
-    return df_ad_computer_duplicate
+def get_df_ad_duplicate(df_ad):
+    df_ad_duplicate = df_ad.filter(pl.struct("device").is_duplicated()).sort("device")
+    return df_ad_duplicate
 
 def get_df_intune_duplicate(df_intune):
     df_intune_duplicate = df_intune.filter(pl.struct("device").is_duplicated()).sort("device")

@@ -15,11 +15,11 @@ def fix_column_names_pascal_case(df):
         rename_dict[col] = new_col
     return df.rename(rename_dict)
 
-def clean_df_ad_computer(df_ad_computer):
-    df_ad_computer = df_ad_computer.rename({"Name": "device"})
-    df_ad_computer = fix_column_names_space(df_ad_computer)
-    df_ad_computer = df_ad_computer.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-    return df_ad_computer
+def clean_df_ad(df_ad):
+    df_ad = df_ad.rename({"Name": "device"})
+    df_ad = fix_column_names_space(df_ad)
+    df_ad = df_ad.with_columns(pl.col("device").str.to_lowercase().alias("device"))
+    return df_ad
 
 def clean_df_intune(df_intune):
     df_intune = df_intune.rename({"deviceName": "device"})

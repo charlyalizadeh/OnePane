@@ -22,8 +22,8 @@ def get_device_category(device):
     else:
         return "Not categorized"
 
-def is_in(row, ad_computer, intune, endpoint, tenable_sensor, entra):
-    return row["ad_computer"] == ad_computer and \
+def is_in(row, ad, intune, endpoint, tenable_sensor, entra):
+    return row["ad"] == ad and \
            row["intune"] == intune and \
            row["endpoint"] == endpoint and \
            row["tenable_sensor"] == tenable_sensor and \
@@ -40,7 +40,7 @@ def get_invalidity_reason(row, validity_rules):
     if row["category"] == "Not categorized":
         return "Not categorized"
     invalid_reason = ""
-    for col in ["ad_computer", "intune", "endpoint", "tenable_sensor", "entra"]:
+    for col in ["ad", "intune", "endpoint", "tenable_sensor", "entra"]:
         should_be_in = validity_rules[row["category"]][col] 
         if row[col] != should_be_in:
             if should_be_in:
