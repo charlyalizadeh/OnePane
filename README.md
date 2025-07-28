@@ -2,6 +2,14 @@
 
 Project to check if the different device management tools have all our the AXERIA devices in them.
 
+## Usage
+
+```python
+python -m venv .venv
+.venv\Scripts\Activate.ps1 # or the specified way to activate python virutal env for your shell
+python .\src\main.py
+```
+
 ## Implemented tools
 
 [x] ActiveDirectory
