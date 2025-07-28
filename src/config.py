@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import sqlite3
 
 PROJECT_PATH = Path(__file__).parent.parent.resolve()
 CHROME_DATA_PATH = Path("~/AppData/Local/Google/Chrome").expanduser()
@@ -9,7 +8,7 @@ DEFAULT_CHROME_PROFILE_PATH = CHROME_DATA_PATH / "User Data/Default"
 PROJECT_CHROME_PROFILE_PATH = PROJECT_PATH / ".profile"
 PROJECT_CHROME_PROFILE_NAME = "Selenium"
 
-validity_rules = {
+default_validity_rules = {
     "LAPTOP_FR":              {"ad": True,  "intune": True,  "endpoint": True,  "tenable_sensor": True,  "entra": True},
     "LAPTOP_RO":              {"ad": True,  "intune": True,  "endpoint": True,  "tenable_sensor": True,  "entra": True},
     "Windows VM":             {"ad": True,  "intune": True,  "endpoint": True,  "tenable_sensor": True,  "entra": True},

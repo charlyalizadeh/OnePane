@@ -1,4 +1,5 @@
 import polars as pl
+import config
 
 
 def polars_to_sqlite_type(pl_dtype):
@@ -28,7 +29,7 @@ def create_table_from_df(cur, df, name, unique=[]):
 
 def fill_table_from_df(cur, df, name):
     placeholders = ', '.join(["?"] * df.width)
-    insert_query = f"INSERT OR IGNORE INTO {name} VALUES ({placeholders})"
+    insert_query = f"INSERT OR REPLACE INTO {name} VALUES ({placeholders})"
     cur.executemany(insert_query, df.rows())
 
 def get_df_from_table(cur, name, prefix=""):
@@ -43,6 +44,53 @@ def create_table_event(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS devices_event (
             type TEXT,
-            device TEXT
+            device TEXT,
+            date TEXT
         );
     """)
+
+def create_table_validity_rules(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS validity_rules (
+                category TEXT,
+                tool TEXT,
+                value INTEGER,
+                UNIQUE(category,tool)
+        );
+    """)
+
+def fill_table_validity_rules_with_default(cur, force=False):
+    values = []
+    for category, table_dict in config.default_validity_rules.items():
+        for table, value in table_dict.items():
+            values.append([category, table, value])
+    insert_query = ""
+    if force:
+        insert_query = "INSERT OR REPLACE INTO validity_rules VALUES (?, ?, ?)"
+    else:
+        insert_query = "INSERT OR IGNORE INTO validity_rules VALUES (?, ?, ?)"
+    cur.executemany(insert_query, values)
+
+def get_validity_rules_dict(cur):
+    if not is_table(cur, "validity_rules"):
+        create_table_validity_rules(cur)
+        fill_table_validity_rules_with_default(cur)
+    cur.execute("SELECT DISTINCT category FROM validity_rules")
+    categories = cur.fetchall()
+    if len(categories) != len(config.default_validity_rules):
+        fill_table_validity_rules_with_default(cur)
+
+    query = "SELECT category, tool, value FROM validity_rules"
+    cur.execute(query)
+    rows = cur.fetchall()
+
+    validity_rules = {}
+    for row in rows:
+        if row[0] not in validity_rules.keys():
+            validity_rules[row[0]] = {}
+        validity_rules[row[0]][row[1]] = bool(row[2])
+    return validity_rules
+
+def is_table(cur, table):
+    cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+    return cur.fetchall() != []

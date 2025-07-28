@@ -1,4 +1,5 @@
 import polars as pl
+import sqlite3
 
 from config import *
 from clean import *
@@ -8,7 +9,7 @@ from imports.import_intune import import_intune
 from imports.import_entra import import_entra
 from write_excel import *
 from process import *
-from db import create_table_from_df, fill_table_from_df
+from db import *
 from webapp.webapp import app
 
 
@@ -46,8 +47,15 @@ if __name__ == "__main__":
     df_tenable_sensor = clean_df_tenable_sensor(df_tenable_sensor)
     df_entra = clean_df_entra(df_entra)
 
+    # Connect to the sqlite database
+    print("Connecting to the sqlite database")
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+
     # Process
     print("Processing the data.")
+    validity_rules = get_validity_rules_dict(cur)
     df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
     df_invalid = get_df_invalid(df_device, validity_rules)
     df_rules = get_df_rules(validity_rules)
@@ -58,24 +66,31 @@ if __name__ == "__main__":
     df_entra_duplicate = get_df_entra_duplicate(df_entra)
     df_intune_duplicate_user = get_df_intune_duplicate_user(df_intune)
 
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
-
-    cur = con.cursor()
+    # Create tables
+    print("Creating table if they don't exists")
     create_table_from_df(cur, df_ad, "ad_devices", unique=["device"])
     create_table_from_df(cur, df_intune, "intune_devices", unique=["id"])
     create_table_from_df(cur, df_endpoint, "endpoint_devices", unique=["serial_number"])
     create_table_from_df(cur, df_tenable_sensor, "tenable_sensor_devices", unique=["id"])
     create_table_from_df(cur, df_entra, "entra_devices", unique=["id"])
+    create_table_validity_rules(cur)
+
+    # Insert data
+    print("Insert data into the tables")
     fill_table_from_df(cur, df_ad, "ad_devices")
     fill_table_from_df(cur, df_intune, "intune_devices")
     fill_table_from_df(cur, df_endpoint, "endpoint_devices")
     fill_table_from_df(cur, df_tenable_sensor, "tenable_sensor_devices")
     fill_table_from_df(cur, df_entra, "entra_devices")
+    fill_table_validity_rules_with_default(cur, force=False)
+
+    # Close connection
     con.commit()
     con.close()
 
+    # Run the webapp
     app.run(debug=True)
+
     # Export
     #print("Writing data to excel file.")
     #write_excel_all(
