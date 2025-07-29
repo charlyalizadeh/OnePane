@@ -4,6 +4,26 @@ Project to check if the different device management tools have all our the AXERI
 
 ## Usage
 
+### Credentials
+
+Create a file named: `.credentials.json` and use the following templates:
+
+```json
+{
+    "Tenable": {
+        "accessKey": "<TENABLE_ACCESS_KEY>",
+        "secretKey": "<TENABLE_SECRET_KEY>"
+    },
+    "Graph": {
+        "tenantId": "<GRAPH_TENANT_ID>",
+        "clientId": "<GRAPH_CLIENT_ID>",
+        "clientSecret": "<GRAPH_CLIENT_SECRET>"
+    }
+}
+```
+
+### Run
+
 ```python
 python -m venv .venv
 .venv\Scripts\Activate.ps1 # or the specified way to activate python virutal env for your shell
@@ -37,5 +57,5 @@ The following tools have automated data import (through their API)
 ## Implementation motivation
 
 The implementation is not using OOP as a conscient choice.
-Even though using OOP may help with maintainenace, I think it would decrease the readability.
+Even though using OOP may help with maintenance, I think it would decrease the readability.
 Please, don't refactor this code using OOP except if you know what you are doing and have good motivation to do so.
