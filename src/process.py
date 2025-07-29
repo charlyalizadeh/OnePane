@@ -38,13 +38,13 @@ def get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sens
     )
 
     # Add category
-    df_device = df_device.with_columns((pl.col("device").map_elements(get_device_category)).alias("category"))
+    df_device = df_device.with_columns((pl.col("device").map_elements(get_device_category, return_dtype=pl.datatypes.String)).alias("category"))
 
     # Add validity column
     # TODO: could be cleaner
     validity_rules_list = {k: [v["ad"], v["intune"], v["endpoint"], v["tenable_sensor"], v["entra"]] for k, v in validity_rules.items()}
     func1 = lambda row: check_device_validity(row, validity_rules_list)
-    df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1).alias("validity"))
+    df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1, return_dtype=pl.datatypes.Boolean).alias("validity"))
 
     # Select desired columns
     df_device = df_device.select([
