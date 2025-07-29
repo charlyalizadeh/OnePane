@@ -1,4 +1,4 @@
-from flask import Flask, render_template, make_response, jsonify
+from flask import Flask, render_template, make_response, jsonify, redirect, url_for
 import sqlite3
 
 from config import DB_PATH
@@ -50,6 +50,8 @@ def get_devices(tab_id):
         import_tenable_sensors()
     elif tab_id == "entra":
         import_entra()
+    elif tab_id == "devices":
+        return redirect(url_for('get_all_devices'))
 
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()

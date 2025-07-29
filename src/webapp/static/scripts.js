@@ -29,6 +29,42 @@ function updateTab(rows, tabId) {
     dt.draw();
 }
 
+function refreshTab(tabId) {
+    const btn = document.getElementById(`refresh-${tabId}`);
+    const btnText = document.getElementById(`refresh-${tabId}-text`);
+
+    btn.disabled = true;
+    btnText.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`;
+
+    fetch(`/get_devices/${tabId}`)
+        .then(response => response.json())
+        .then(data => {
+            updateTab(data['rows'], tabId);
+
+            btnText.innerHTML = '<i class="bi bi-check-lg"></i>';
+            btn.classList.remove('btn-outline-primary')
+            btn.classList.add('btn-outline-success')
+            setTimeout(() => {
+                btnText.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                btn.disabled = false;
+                btn.classList.remove('btn-outline-success')
+                btn.classList.add('btn-outline-primary')
+            }, 1500);
+        })
+        .catch(error => {
+            console.error("Refresh failed:", error);
+            btnText.innerHTML = `Error`;
+            btn.classList.remove('btn-outline-primary')
+            btn.classList.add('btn-outline-danger')
+            setTimeout(() => {
+                btnText.textContent = "Refresh";
+                btn.disabled = false;
+                btn.classList.remove('btn-outline-danger')
+                btn.classList.add('btn-outline-primary')
+            }, 1500);
+        });
+}
+
 function validityRulesEdit(input) {
     let category = input.dataset.category
     let tool = input.dataset.tool
