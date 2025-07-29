@@ -59,20 +59,44 @@ def split():
     con.close()
     return render_template("split.html", tables=tables)
 
-@app.route("/merged")
-def merged():
+@app.route("/get_all_devices")
+def get_all_devices():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
+
     df_ad = get_df_from_table(cur, "ad_devices")
     df_intune = get_df_from_table(cur, "intune_devices")
     df_endpoint = get_df_from_table(cur, "endpoint_devices")
     df_tenable_sensor = get_df_from_table(cur, "tenable_sensor_devices")
     df_entra = get_df_from_table(cur, "entra_devices")
-
     validity_rules = get_validity_rules_dict(cur)
-    df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
+
     con.close()
-    return render_template("merged.html", df=df_device)
+
+    df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
+    return make_response({'rows': df_device.rows()})
+
+@app.route("/merged")
+def merged():
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+
+    df_ad = get_df_from_table(cur, "ad_devices")
+    df_intune = get_df_from_table(cur, "intune_devices")
+    df_endpoint = get_df_from_table(cur, "endpoint_devices")
+    df_tenable_sensor = get_df_from_table(cur, "tenable_sensor_devices")
+    df_entra = get_df_from_table(cur, "entra_devices")
+    validity_rules = get_validity_rules_dict(cur)
+
+    con.close()
+
+    df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
+    return render_template(
+               "merged.html",
+               colnames=df_device.columns,
+               rows=df_device.rows(),
+               validity_rules=validity_rules
+            )
 
 @app.route("/set_validity_rule/<category>/<tool>/<value>")
 def set_validity_rule(category, tool, value):
@@ -85,11 +109,3 @@ def set_validity_rule(category, tool, value):
         return jsonify({'status': 'success'}), 200
     except e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route("/validity_rules")
-def validity_rules_view():
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    validity_rules = get_validity_rules_dict(cur)
-    con.close()
-    return render_template("validity_rules.html", validity_rules=validity_rules)

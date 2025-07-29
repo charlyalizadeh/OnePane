@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print("    - intune_devices")
     create_table_from_df(cur, df_intune, "intune_devices", unique=["id"])
     print("    - endpoint_devices")
-    create_table_from_df(cur, df_endpoint, "endpoint_devices", unique=["serial_number"])
+    create_table_from_df(cur, df_endpoint, "endpoint_devices", unique=["device"]) # TODO: be sure that a device
     print("    - tenable_sensors_devices")
     create_table_from_df(cur, df_tenable_sensor, "tenable_sensor_devices", unique=["id"])
     print("    - entra_devices")

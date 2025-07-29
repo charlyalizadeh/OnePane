@@ -35,7 +35,7 @@ body {
 /* Table base style */
 .table {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0 0.75rem;
   color: #1f2937;
   font-size: 0.9rem;
