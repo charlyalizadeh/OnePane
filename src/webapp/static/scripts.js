@@ -4,13 +4,11 @@ function updateTab(rows, tabId) {
     // Get the DataTable
     if(!$.fn.DataTable.isDataTable(table)) {
         dt = $(table).DataTable({
-            dom: 'Bfrtip',
-            buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             pageLength: 50,
             createdRow: function (row, data, dataIndex) {
-            // Example: add 'row-valid' or 'row-invalid' based on a condition
-                const isValid = data[data.length - 1]; // assuming last column indicates validity
+                if(tabId != "devices") { return }
+                const isValid = data[data.length - 1];
                 if (isValid) {
                     $(row).addClass('row-valid');
                 } else {
