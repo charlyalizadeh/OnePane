@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1> All devices </h1>
+<button id="refresh-devices" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('devices')">
+    <span id="refresh-devices-text"><i class="bi bi-arrow-clockwise"></i></span>
+</button>
+
+<!-- Edit validity rules -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-validity-rules">
+  Edit validity rules
+</button>
+<div class="modal fade" id="edit-validity-rules" tabindex="-1" aria-labelledby="edit-validity-rules-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="edit-validity-rules-title">Validity rules</h1>
+            </div>
+            <div class="modal-body">
+                <table id="devices_table" class="table table-bordered table-striped text-center align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Device Name</th>
+                            <th>AD</th>
+                            <th>Intune</th>
+                            <th>Endpoint</th>
+                            <th>Tenable Sensor</th>
+                            <th>Entra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category, table_dict in validity_rules.items() %}
+                        <tr>
+                            <td>{{ category }}</td>
+                            {% for tool, value in table_dict.items() %}
+                            <td>
+                                <input
+                                        type="checkbox"
+                                        id="{{category}}_{{tool}}"
+                                        name="{{category}}_{{tool}}"
+                                        data-category="{{ category }}"
+                                        data-tool="{{ tool }}"
+                                        onchange="validityRulesChange(this)"
+                                        {% if value %}checked{% endif %}
+                                        />
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- All devices -->
+<div style="max-width: 1300px; overflow-x: auto; overflow-y: hidden; border: 1px solid #ccc; padding: 10px;">
+    <table class="table table-striped table-bordered table-hover table-sm" id="devices_table">
+        <thead>
+            <tr>
+                <th>#</th>
+                {% for colname in colnames %}
+                <th>{{ colname }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr class="{% if row[-1] %}row-valid{% else %}row-invalid{% endif %}">
+                <td>{{ loop.index }}</td>
+                {% for value in row %}
+                <td class="truncate" title="{{ value }}">
+                    {{ value }}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        refreshTab()
+    })
+    function validityRulesChange(input) {
+        validityRulesEdit(input);
+        refreshTab() // TODO: overkill, should only reload the validity data
+    }
+</script>
+{% endblock %}

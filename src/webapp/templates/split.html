@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1> Per tools </h1>
+<!-- Tabs nav -->
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+    {% for table in tables %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {% if loop.first %}active{% endif %}" 
+                id="{{ table['html_name'] }}-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#{{ table['html_name'] }}" 
+                type="button" 
+                role="tab" 
+                aria-controls="{{ table['html_name'] }}" 
+                aria-selected="{{ 'true' if loop.first else 'false' }}">
+            {{ table["name"] }}
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- Tabs content -->
+<div class="tab-content" id="myTabContent">
+    {% for table in tables %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+         id="{{ table['html_name'] }}" 
+         role="tabpanel" 
+         aria-labelledby="{{ table['html_name'] }}-tab">
+        <button id="refresh-{{ table['html_name'] }}" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('{{ table['html_name'] }}')">
+            <span id="refresh-{{ table['html_name'] }}-text"><i class="bi bi-arrow-clockwise"></i></span>
+        </button>
+        <div style="max-width: 1300px; overflow-x: auto; overflow-y: hidden; border: 1px solid #ccc; padding: 10px;">
+            <table class="table table-striped table-bordered table-hover table-sm" id="{{ table['html_name'] }}_table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        {% for colname in table["colnames"] %}
+                        <th>{{ colname }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="{{ table['html_name']}}_tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        {% for table in tables %}
+        refreshTab("{{ table["html_name"] }}")
+        {% endfor %}
+    });
+</script>
+{% endblock %}
