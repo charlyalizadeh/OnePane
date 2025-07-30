@@ -27,7 +27,7 @@
          id="{{ table['html_name'] }}" 
          role="tabpanel" 
          aria-labelledby="{{ table['html_name'] }}-tab">
-        <button id="refresh-{{ table['html_name'] }}" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('{{ table['html_name'] }}')">
+        <button id="refresh-{{ table['html_name'] }}" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('{{ table['html_name'] }}', true)">
             <span id="refresh-{{ table['html_name'] }}-text"><i class="bi bi-arrow-clockwise"></i></span>
         </button>
         <div style="max-width: 1300px; overflow-x: auto; overflow-y: hidden; border: 1px solid #ccc; padding: 10px;">
@@ -53,7 +53,7 @@
 <script>
     $(document).ready(function() {
         {% for table in tables %}
-        refreshTab("{{ table["html_name"] }}")
+        refreshTab("{{ table["html_name"] }}", false)
         {% endfor %}
     });
 </script>

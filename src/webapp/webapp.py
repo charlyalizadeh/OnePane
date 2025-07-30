@@ -21,10 +21,9 @@ def execute_query_safe(cur, query):
 def get_validity_rules_safe(cur):
     try:
         validity_rules = get_validity_rules_dict(cur)
+        return validity_rules
     except e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-    
-    return validity_rules
 
 def get_df_device_safe(cur, validity_rules):
     try:
@@ -40,17 +39,24 @@ def get_df_device_safe(cur, validity_rules):
 
     return df_device
 
+@app.route("/update_devices/<tab_id>")
+def update_devices(tab_id):
+    try:
+        if tab_id == "ad":
+            import_ad()
+        elif tab_id == "intune":
+            import_intune()
+        elif tab_id == "tenable_sensors":
+            import_tenable_sensors()
+        elif tab_id == "entra":
+            import_entra()
+        return jsonify({'status': 'success'}), 200
+    except e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route("/get_devices/<tab_id>")
 def get_devices(tab_id):
-    if tab_id == "ad":
-        import_ad()
-    elif tab_id == "intune":
-        import_intune()
-    elif tab_id == "tenable_sensors":
-        import_tenable_sensors()
-    elif tab_id == "entra":
-        import_entra()
-    elif tab_id == "devices":
+    if tab_id == "devices":
         return redirect(url_for('get_all_devices'))
 
     con = sqlite3.connect(DB_PATH)
@@ -63,9 +69,11 @@ def get_devices(tab_id):
 
     # Get all devices and make the `device` column the first one
     execute_query_safe(cur, f"SELECT * FROM {tab_id}_devices")
-    rows = [list(row) for row in cur.fetchall()]
-    for j, row in enumerate(rows):
-        row[device_index], row[0] = row[0], row[device_index]
+    rows = []
+    for j, row in enumerate(cur.fetchall()):
+        row = list(row)
+        row.insert(0, row.pop(device_index))
+        rows.append(row)
         rows[j] = ['' if r is None else r for r in row]
 
     con.close()

@@ -29,13 +29,16 @@ function updateTab(rows, tabId) {
     dt.draw();
 }
 
-function refreshTab(tabId) {
+function refreshTab(tabId, update) {
     const btn = document.getElementById(`refresh-${tabId}`);
     const btnText = document.getElementById(`refresh-${tabId}-text`);
 
     btn.disabled = true;
     btnText.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`;
 
+    if(update) {
+        fetch(`/update_devices/${tabId}`)
+    }
     fetch(`/get_devices/${tabId}`)
         .then(response => response.json())
         .then(data => {

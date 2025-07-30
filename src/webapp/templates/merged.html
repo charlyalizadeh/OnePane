@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1> All devices </h1>
-<button id="refresh-devices" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('devices')">
+<button id="refresh-devices" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('devices', true)">
     <span id="refresh-devices-text"><i class="bi bi-arrow-clockwise"></i></span>
 </button>
 
@@ -85,11 +85,11 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        refreshTab()
+        refreshTab('devices', false)
     })
     function validityRulesChange(input) {
         validityRulesEdit(input);
-        refreshTab() // TODO: overkill, should only reload the validity data
+        refreshTab('devices', false) // TODO: overkill, should only reload the validity data
     }
 </script>
 {% endblock %}
