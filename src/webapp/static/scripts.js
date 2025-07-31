@@ -4,8 +4,14 @@ function updateTab(rows, tabId) {
     // Get the DataTable
     if(!$.fn.DataTable.isDataTable(table)) {
         dt = $(table).DataTable({
+            layout: {
+                topStart: ['pageLength', 'buttons']
+            },
+            buttons: ['colvis'],
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             pageLength: 50,
+            scrollX: true,
+            fixedColumns: { start: 2 },
             createdRow: function (row, data, dataIndex) {
                 if(tabId != "devices") { return }
                 const isValid = data[data.length - 1];
