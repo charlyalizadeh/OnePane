@@ -17,7 +17,7 @@
                 <h1 class="modal-title fs-5" id="edit-validity-rules-title">Validity rules</h1>
             </div>
             <div class="modal-body">
-                <table id="devices_table" class="table table-bordered table-striped text-center align-middle">
+                <table id="edit-validity-rules-table" class="table table-bordered table-striped text-center align-middle">
                     <thead class="table-dark">
                         <tr>
                             <th>Device Name</th>
@@ -57,7 +57,7 @@
 
 <!-- All devices -->
 <div style="max-width: 1300px; overflow-x: auto; overflow-y: hidden; border: 1px solid #ccc; padding: 10px;">
-    <table class="table table-striped table-bordered table-hover table-sm" id="devices_table">
+    <table id="devices_table" class="table table-striped table-bordered table-hover table-sm">
         <thead>
             <tr>
                 <th>#</th>
@@ -66,17 +66,7 @@
                 {% endfor %}
             </tr>
         </thead>
-        <tbody>
-            {% for row in rows %}
-            <tr class="{% if row[-1] %}row-valid{% else %}row-invalid{% endif %}">
-                <td>{{ loop.index }}</td>
-                {% for value in row %}
-                <td class="truncate" title="{{ value }}">
-                    {{ value }}
-                </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
+        <tbody id="devices_tbody">
         </tbody>
     </table>
 </div>

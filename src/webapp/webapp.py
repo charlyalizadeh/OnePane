@@ -15,15 +15,15 @@ app = Flask(__name__)
 def execute_query_safe(cur, query):
     try:
         cur.execute(query)
-    except e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except:
+        return jsonify({'status': 'error', 'message': f'Error executing: {query}'}), 500
 
 def get_validity_rules_safe(cur):
     try:
         validity_rules = get_validity_rules_dict(cur)
         return validity_rules
-    except e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except:
+        return jsonify({'status': 'error', 'message': f'Error retriving validity rules'}), 500
 
 def get_df_device_safe(cur, validity_rules):
     try:
@@ -33,8 +33,8 @@ def get_df_device_safe(cur, validity_rules):
         df_tenable_sensor = get_df_from_table(cur, "tenable_sensor_devices")
         df_entra = get_df_from_table(cur, "entra_devices")
         validity_rules = get_validity_rules_dict(cur)
-    except e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except:
+        return jsonify({'status': 'error', 'message': f'Error retriving all polars df from database'}), 500
     df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
 
     return df_device
@@ -51,8 +51,8 @@ def update_devices(tab_id):
         elif tab_id == "entra":
             import_entra()
         return jsonify({'status': 'success'}), 200
-    except e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except:
+        return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
 
 @app.route("/get_devices/<tab_id>")
 def get_devices(tab_id):
