@@ -1,17 +1,15 @@
 from flask import Flask, render_template, make_response, jsonify, redirect, url_for
 import sqlite3
 
-from config import DB_PATH
+from config import DB_PATH, PROJECT_PATH
 from db import get_df_from_table, get_validity_rules_dict
-from imports.import_ad import import_ad
-from imports.import_entra import import_entra
-from imports.import_intune import import_intune
-from imports.import_tenable import import_tenable_sensors
+from api_to_csv import api_to_csv
 from process import get_df_device
 
 
 app = Flask(__name__)
 
+# Utilities
 def execute_query_safe(cur, query):
     try:
         cur.execute(query)
@@ -39,17 +37,11 @@ def get_df_device_safe(cur, validity_rules):
 
     return df_device
 
+# Per tools
 @app.route("/update_devices/<tab_id>")
 def update_devices(tab_id):
     try:
-        if tab_id == "ad":
-            import_ad()
-        elif tab_id == "intune":
-            import_intune()
-        elif tab_id == "tenable_sensors":
-            import_tenable_sensors()
-        elif tab_id == "entra":
-            import_entra()
+        api_to_csv(tab_id, PROJECT_PATH / f"data/{tab_id}_devices.csv")
         return jsonify({'status': 'success'}), 200
     except:
         return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
@@ -103,6 +95,7 @@ def split():
     con.close()
     return render_template("split.html", tables=tables)
 
+# All devices
 @app.route("/get_all_devices")
 def get_all_devices():
     con = sqlite3.connect(DB_PATH)
@@ -136,3 +129,30 @@ def set_validity_rule(category, tool, value):
     con.commit()
     con.close()
     return jsonify({'status': 'success'}), 200
+
+# Single device
+@app.route("/device/<name>")
+def device(name):
+    name = name.lower()
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    query = f"""
+    SELECT ad.device, intune.device, endpoint.device, tenable_sensor.device, entra.device
+    FROM ad_devices ad, intune_devices intune, endpoint_devices endpoint, tenable_sensors_devices tenable_sensor, entra_devices entra
+    WHERE ad.device = '{name}'
+    AND intune.device = '{name}'
+    AND endpoint.device = '{name}'
+    AND tenable.device = '{name}'
+    AND entra.device = '{name}';
+    """
+    #query = f"""
+    #SELECT ad.device, intune.device, endpoint.device
+    #FROM ad_devices ad, intune_devices intune, endpoint_device en
+    #WHERE ad.device = '{name}'
+    #AND intune.device = '{name}'
+    #"""
+    print(query)
+    execute_query_safe(cur, query)
+    print(cur.fetchall())
+    return jsonify({'status': 'success'}), 200
+

@@ -39,6 +39,26 @@ def clean_df_endpoint(df_endpoint):
     )
     return df_endpoint
 
+def clean_df_entra(df_entra):
+    df_entra = df_entra.rename({"displayName": "device"})
+    df_entra = fix_column_names_pascal_case(df_entra)
+    df_entra = df_entra.with_columns(pl.col("device").str.to_lowercase().alias("device"))
+    df_entra = df_entra.with_columns(
+            (pl.col("registration_date_time") \
+               .str.replace("T", " ", literal=True) \
+               .str.replace("Z", " ", literal=True) \
+               .str.to_date(format="%Y-%m-%d %H:%M:%S", strict=False)) \
+               .alias("registration_date_time")
+    )
+    df_entra = df_entra.with_columns(
+            (pl.col("approximate_last_sign_in_date_time") \
+               .str.replace("T", " ", literal=True) \
+               .str.replace("Z", " ", literal=True) \
+               .str.to_date(format="%Y-%m-%d %H:%M:%S", strict=False)) \
+               .alias("approximate_last_sign_in_date_time")
+    )
+    return df_entra
+
 def clean_df_tenable_sensor_csv(df_tenable_sensor):
     df_tenable_sensor = df_tenable_sensor.rename({"Agent Name": "device"})
     df_tenable_sensor = fix_column_names_space(df_tenable_sensor)
@@ -60,22 +80,14 @@ def clean_df_tenable_sensor(df_tenable_sensor):
     df_tenable_sensor = df_tenable_sensor.with_columns(pl.from_epoch("last_scanned", time_unit="ms").alias("last_scanned"))
     return df_tenable_sensor
 
-def clean_df_entra(df_entra):
-    df_entra = df_entra.rename({"displayName": "device"})
-    df_entra = fix_column_names_pascal_case(df_entra)
-    df_entra = df_entra.with_columns(pl.col("device").str.to_lowercase().alias("device"))
-    df_entra = df_entra.with_columns(
-            (pl.col("registration_date_time") \
-               .str.replace("T", " ", literal=True) \
-               .str.replace("Z", " ", literal=True) \
-               .str.to_date(format="%Y-%m-%d %H:%M:%S", strict=False)) \
-               .alias("registration_date_time")
-    )
-    df_entra = df_entra.with_columns(
-            (pl.col("approximate_last_sign_in_date_time") \
-               .str.replace("T", " ", literal=True) \
-               .str.replace("Z", " ", literal=True) \
-               .str.to_date(format="%Y-%m-%d %H:%M:%S", strict=False)) \
-               .alias("approximate_last_sign_in_date_time")
-    )
-    return df_entra
+def clean_df(source, df):
+    if source == "ad":
+        return clean_df_ad(df)
+    elif source == "intune":
+        return clean_df_intune(df)
+    elif source == "endpoint":
+        return clean_df_endpoint(df)
+    elif source == "entra":
+        return clean_df_entra(df)
+    elif source == "tenable_sensor":
+        return clean_df_tenable_sensor(df)

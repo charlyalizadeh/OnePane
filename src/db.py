@@ -119,3 +119,12 @@ def get_validity_rules_dict(cur):
 def is_table(cur, table):
     cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
     return cur.fetchall() != []
+
+def is_table_empty(cur, table):
+    if not is_table(cur, table):
+        return True
+    query = f"SELECT * FROM {table}"
+    cur.execute(query)
+    if not cur.fetchall():
+        return True
+    return False
