@@ -1,10 +1,12 @@
 from flask import Flask, render_template, make_response, jsonify, redirect, url_for
 import sqlite3
+import polars as pl
 
 from config import DB_PATH, PROJECT_PATH
-from db import get_df_from_table, get_validity_rules_dict
+from db import get_df_from_table, get_validity_rules_dict, update_table_from_df
 from api_to_csv import api_to_csv
 from process import get_df_device
+from clean import clean_df
 
 
 app = Flask(__name__)
@@ -40,8 +42,24 @@ def get_df_device_safe(cur, validity_rules):
 # Per tools
 @app.route("/update_devices/<tab_id>")
 def update_devices(tab_id):
+    # TODO: remove this hard coded dict (present also in main)
+    unique = {
+        "ad": [["device"]],
+        "intune": [["managed_device_name"]],
+        "endpoint": [["device"]],
+        "tenable_sensor": [["uuid"], ["id"]],
+        "entra": [["id"]]
+    }
     try:
-        api_to_csv(tab_id, PROJECT_PATH / f"data/{tab_id}_devices.csv")
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        out = PROJECT_PATH / f"data/{tab_id}_devices.csv"
+        api_to_csv(tab_id, out)
+        df = pl.read_csv(out)
+        df = clean_df(tab_id, df)
+        update_table_from_df(cur, df, f"{tab_id}_devices", unique[tab_id][0][0])
+        con.commit()
+        con.close()
         return jsonify({'status': 'success'}), 200
     except:
         return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
@@ -130,29 +148,19 @@ def set_validity_rule(category, tool, value):
     con.close()
     return jsonify({'status': 'success'}), 200
 
-# Single device
-@app.route("/device/<name>")
-def device(name):
-    name = name.lower()
+
+# Event
+@app.route("/event_devices")
+def event_devices():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    query = f"""
-    SELECT ad.device, intune.device, endpoint.device, tenable_sensor.device, entra.device
-    FROM ad_devices ad, intune_devices intune, endpoint_devices endpoint, tenable_sensors_devices tenable_sensor, entra_devices entra
-    WHERE ad.device = '{name}'
-    AND intune.device = '{name}'
-    AND endpoint.device = '{name}'
-    AND tenable.device = '{name}'
-    AND entra.device = '{name}';
-    """
-    #query = f"""
-    #SELECT ad.device, intune.device, endpoint.device
-    #FROM ad_devices ad, intune_devices intune, endpoint_device en
-    #WHERE ad.device = '{name}'
-    #AND intune.device = '{name}'
-    #"""
-    print(query)
-    execute_query_safe(cur, query)
-    print(cur.fetchall())
-    return jsonify({'status': 'success'}), 200
-
+    execute_query_safe(cur, "SELECT * FROM event_devices")
+    rows = [list(row) for row in cur.fetchall()]
+    for i in range(len(rows)):
+        rows[i][0] = rows[i][0].capitalize()
+        rows[i][2] = rows[i][2].replace("_devices", "").capitalize().replace("_", " ")
+    con.close()
+    return render_template(
+               "events.html",
+               events=rows
+           )
