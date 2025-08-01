@@ -12,6 +12,7 @@ function updateTab(rows, tabId) {
             pageLength: 50,
             scrollX: true,
             fixedColumns: { start: 2 },
+            colResize: { isEnabled: true },
             createdRow: function (row, data, dataIndex) {
                 if(tabId != "devices") { return }
                 const isValid = data[data.length - 1];
@@ -20,6 +21,17 @@ function updateTab(rows, tabId) {
                 } else {
                     $(row).addClass('row-invalid');
                 }
+            },
+            headerCallback: function(thead) {
+                $(thead).find('th').css({
+                    'background-color': '#3b82f6',
+                    'color': '#ffffff',
+                    'border-bottom': 'none',
+                    'padding': '0.75rem 1rem',
+                    'text-align': 'left',
+                    'font-weight': '600',
+                    'border-radius': '0.5rem 0.5rem 0 0'
+                });
             }
         })
     }
