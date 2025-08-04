@@ -147,15 +147,9 @@ tr.row-invalid td {
 }
 
 /* Force remove default indeterminate visuals */
-.three-state::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-color: transparent;
-}
 
 .state-indeterminate::before {
-    content: '■';
+    content: '\2610';
     font-size: 14px;
     color: orange;
     display: flex;
@@ -167,9 +161,21 @@ tr.row-invalid td {
 }
 
 .state-checked::before {
-    content: '✓';
+    content: '\2714';
     font-size: 14px;
     color: green;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+}
+
+.state-unchecked::before {
+    content: '\2718';
+    font-size: 14px;
+    color: red;
     display: flex;
     align-items: center;
     justify-content: center;

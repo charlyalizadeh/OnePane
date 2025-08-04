@@ -20,7 +20,7 @@
                 <table id="edit-validity-rules-table" class="table table-bordered table-striped text-center align-middle">
                     <thead>
                         <tr>
-                            <th>Device Name</th>
+                            <th>Device category</th>
                             <th>AD</th>
                             <th>Intune</th>
                             <th>Endpoint</th>
@@ -49,6 +49,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <span><span style="color: green">✔</span>: Device should be in</span></br>
+                <span><span style="color: red">✘</span>: Device shouldn't be in</span></br>
+                <span><span style="color: orange">☐</span>: Doesn't matter if device is in or not</span></br>
             </div>
         </div>
     </div>
@@ -94,12 +97,15 @@
     function updateVisual(checkbox) {
         checkbox.checked = checkbox.dataset.state == "1";
         checkbox.indeterminate = checkbox.dataset.state == "2";
-        checkbox.classList.remove('state-indeterminate', 'state-checked')
+        checkbox.classList.remove('state-indeterminate', 'state-checked', 'state-unchecked')
         if(checkbox.checked) {
             checkbox.classList.add('state-checked')
         }
         else if(checkbox.indeterminate) {
             checkbox.classList.add('state-indeterminate')
+        }
+        else {
+            checkbox.classList.add('state-unchecked')
         }
     }
     function validityRulesChange(input) {
