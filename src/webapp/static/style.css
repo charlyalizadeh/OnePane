@@ -118,6 +118,12 @@ tr.row-invalid td {
 
 .custom-navbar {
     background-color: #1e40af; /* dark Axeria-like blue */
+    display: flex;
+    align-items: flex-end;
+}
+.custom-navbar .navbar-brand {
+    align-self: flex-end;
+    padding-bottom: 0.25rem;
 }
 .custom-navbar .navbar-brand,
 .custom-navbar .navbar-nav .nav-link {
