@@ -124,6 +124,7 @@ def get_all_devices():
 
     return make_response({'rows': df_device.rows()})
 
+@app.route("/")
 @app.route("/merged")
 def merged():
     con = sqlite3.connect(DB_PATH)
