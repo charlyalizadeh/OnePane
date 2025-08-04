@@ -149,7 +149,6 @@ def set_validity_rule(category, tool, value):
     con.close()
     return jsonify({'status': 'success'}), 200
 
-
 # Event
 @app.route("/event_devices")
 def event_devices():

@@ -139,3 +139,41 @@ tr.row-invalid td {
     width: auto;
 }
 
+/* Checkbox */
+.three-state {
+    width: 18px;
+    height: 18px;
+    position: relative;
+}
+
+/* Force remove default indeterminate visuals */
+.three-state::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: transparent;
+}
+
+.state-indeterminate::before {
+    content: '■';
+    font-size: 14px;
+    color: orange;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+}
+
+.state-checked::before {
+    content: '✓';
+    font-size: 14px;
+    color: green;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+}

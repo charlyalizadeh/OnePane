@@ -23,11 +23,11 @@ def get_device_category(device):
         return "Not categorized"
 
 def is_in(row, ad, intune, endpoint, tenable_sensor, entra):
-    return row["ad"] == ad and \
-           row["intune"] == intune and \
-           row["endpoint"] == endpoint and \
-           row["tenable_sensor"] == tenable_sensor and \
-           row["entra"] == entra
+    return (ad == 2 or row["ad"] == ad) and \
+           (intune == 2 or row["intune"] == intune) and \
+           (endpoint == 2 or row["endpoint"] == endpoint) and \
+           (tenable_sensor == 2 or row["tenable_sensor"] == tenable_sensor) and \
+           (entra == 2 or row["entra"] == entra)
 
 def check_device_validity(row, device_validity_rules):
     if row["category"] == "Not categorized":

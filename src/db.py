@@ -146,7 +146,7 @@ def get_validity_rules_dict(cur):
     for row in rows:
         if row[0] not in validity_rules.keys():
             validity_rules[row[0]] = {}
-        validity_rules[row[0]][row[1]] = bool(row[2])
+        validity_rules[row[0]][row[1]] = row[2]
     return validity_rules
 
 def is_table(cur, table):

@@ -89,7 +89,7 @@ function refreshTab(tabId, update) {
 function validityRulesEdit(input) {
     let category = input.dataset.category
     let tool = input.dataset.tool
-    let value = Number(input.checked)
-    let request = new Request(`/set_validity_rule/${category}/${tool}/${value}`)
+    let state = input.dataset.state
+    let request = new Request(`/set_validity_rule/${category}/${tool}/${state}`)
     fetch(request).catch(err => { console.log("Failed to update validity rules:", err)})
 }
