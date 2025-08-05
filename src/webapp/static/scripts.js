@@ -42,6 +42,13 @@ function updateTab(rows, tabId) {
     // Setup the data
     rows.forEach((row, index) => {
         const rowData = [index + 1, ...Object.values(row)];
+        for(let i = 0; i < rowData.length; i++) {
+            if(rowData[i] == true) {
+                rowData[i] = '<span style="color: green">✔</span>'
+            }
+            if(rowData[i] == false)
+                rowData[i] = '<span style="color: red">✘</span>'
+        }
         dt.row.add(rowData);
     });
     dt.draw();
