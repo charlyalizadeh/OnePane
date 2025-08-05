@@ -1,4 +1,6 @@
 function updateTab(rows, tabId) {
+    const trueDisplay = '<span style="color: green">✔</span>'
+    const falseDisplay = '' //'<span style="color: red">✘</span>'
     const table = `#${tabId}_table`;
     let dt;
     // Get the DataTable
@@ -15,7 +17,7 @@ function updateTab(rows, tabId) {
             colResize: { isEnabled: true },
             createdRow: function (row, data, dataIndex) {
                 if(tabId != "devices") { return }
-                const isValid = data[data.length - 1];
+                const isValid = data[data.length - 1] == trueDisplay;
                 if (isValid) {
                     $(row).addClass('row-valid');
                 } else {
@@ -43,11 +45,10 @@ function updateTab(rows, tabId) {
     rows.forEach((row, index) => {
         const rowData = [index + 1, ...Object.values(row)];
         for(let i = 0; i < rowData.length; i++) {
-            if(rowData[i] == true) {
-                rowData[i] = '<span style="color: green">✔</span>'
-            }
+            if(rowData[i] == true)
+                rowData[i] = trueDisplay
             if(rowData[i] == false)
-                rowData[i] = '<span style="color: red">✘</span>'
+                rowData[i] = falseDisplay
         }
         dt.row.add(rowData);
     });
