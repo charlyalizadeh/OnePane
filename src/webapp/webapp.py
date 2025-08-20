@@ -64,21 +64,22 @@ def update_devices(tab_id):
     except:
         return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
 
-@app.route("/get_devices/<tab_id>")
-def get_devices(tab_id):
-    if tab_id == "devices":
+@app.route("/get_devices/<table_id>")
+def get_devices(table_id):
+    if table_id == "devices":
         return redirect(url_for('get_all_devices'))
 
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
     # Get the column names
-    execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{tab_id}_devices')")
+    table_name = table_id.replace('-', '_')
+    execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{table_name}')")
     colnames = [r[0] for r in cur.fetchall()]
     device_index = colnames.index("device")
 
     # Get all devices and make the `device` column the first one
-    execute_query_safe(cur, f"SELECT * FROM {tab_id}_devices")
+    execute_query_safe(cur, f"SELECT * FROM {table_name}")
     rows = []
     for j, row in enumerate(cur.fetchall()):
         row = list(row)
@@ -102,7 +103,7 @@ def split():
             {"table_name": "entra_devices", "name": "Entra ID"}
     ]
     for i, table in enumerate(tables):
-        tables[i]["html_name"] = table["table_name"].replace("_devices", "")
+        tables[i]["html_name"] = table["table_name"].replace("_", "-")
         execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{table['table_name']}')")
         colnames = [r[0] for r in cur.fetchall()]
         # Make the `device` column the first one

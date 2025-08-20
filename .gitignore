@@ -2,6 +2,6 @@ data/*
 results/*
 __pycache__
 *.json
-*.html
 .profile
 .credentials.json
+pyrightconfig.json

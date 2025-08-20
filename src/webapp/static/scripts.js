@@ -1,7 +1,37 @@
+// Button state
+function setBtnStateLoad(btn, btnText) {
+    btn.disabled = true
+    btnText.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
+}
+function setBtnStateSuccess(btn, btnText) {
+    btnText.innerHTML = '<i class="bi bi-check-lg"></i>'
+    btn.classList.remove('btn-outline-primary')
+    btn.classList.add('btn-outline-success')
+    setTimeout(() => {
+        btnText.innerHTML = '<i class="bi bi-arrow-clockwise"></i>'
+        btn.disabled = false
+        btn.classList.remove('btn-outline-success')
+        btn.classList.add('btn-outline-primary')
+    }, 1500)
+}
+function setBtnStateFailure(btn, btnText, error) {
+    console.error("Refresh failed:", error)
+    btnText.innerHTML = `Error`
+    btn.classList.remove('btn-outline-primary')
+    btn.classList.add('btn-outline-danger')
+    setTimeout(() => {
+        btnText.textContent = "Refresh"
+        btn.disabled = false
+        btn.classList.remove('btn-outline-danger')
+        btn.classList.add('btn-outline-primary')
+    }, 1500)
+}
+
+// DataTables data update
 function updateTab(rows, tabId) {
     const trueDisplay = '<span style="color: green">✔</span>'
     const falseDisplay = '' //'<span style="color: red">✘</span>'
-    const table = `#${tabId}_table`
+    const table = `#${tabId}-table`
     let dt
     // Get the DataTable
     if(!$.fn.DataTable.isDataTable(table)) {
@@ -53,37 +83,6 @@ function updateTab(rows, tabId) {
     })
     dt.draw()
 }
-
-function setBtnStateLoad(btn, btnText) {
-    btn.disabled = true
-    btnText.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
-}
-
-function setBtnStateSuccess(btn, btnText) {
-    btnText.innerHTML = '<i class="bi bi-check-lg"></i>'
-    btn.classList.remove('btn-outline-primary')
-    btn.classList.add('btn-outline-success')
-    setTimeout(() => {
-        btnText.innerHTML = '<i class="bi bi-arrow-clockwise"></i>'
-        btn.disabled = false
-        btn.classList.remove('btn-outline-success')
-        btn.classList.add('btn-outline-primary')
-    }, 1500)
-}
-
-function setBtnStateFailure(btn, btnText) {
-    console.error("Refresh failed:", error)
-    btnText.innerHTML = `Error`
-    btn.classList.remove('btn-outline-primary')
-    btn.classList.add('btn-outline-danger')
-    setTimeout(() => {
-        btnText.textContent = "Refresh"
-        btn.disabled = false
-        btn.classList.remove('btn-outline-danger')
-        btn.classList.add('btn-outline-primary')
-    }, 1500)
-}
-
 function refreshTab(tabId, update) {
     const btn = document.getElementById(`refresh-${tabId}`)
     const btnText = document.getElementById(`refresh-${tabId}-text`)
@@ -99,10 +98,11 @@ function refreshTab(tabId, update) {
             setBtnStateSuccess(btn, btnText)
         })
         .catch(error => {
-            setBtnStateFailure(btn, btnText)
+            setBtnStateFailure(btn, btnText, error)
         })
 }
 
+// Validity rules
 function validityRulesEdit(input) {
     let category = input.dataset.category
     let tool = input.dataset.tool
@@ -110,4 +110,3 @@ function validityRulesEdit(input) {
     let request = new Request(`/set_validity_rule/${category}/${tool}/${state}`)
     fetch(request).catch(err => { console.log("Failed to update validity rules:", err)})
 }
-
