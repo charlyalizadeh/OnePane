@@ -55,6 +55,13 @@ body {
     vertical-align: middle;
 }
 
+.table td, 
+.table th {
+    padding: 2px 6px !important;  /* tighten cell spacing */
+    line-height: 1.2;             /* reduce vertical space */
+    vertical-align: middle;       /* keep text centered */
+}
+
 /* First column: narrow */
 .table th:first-child,
 .table td:first-child {
@@ -73,23 +80,7 @@ body {
     padding: 0.375rem 0.75rem;
 }
 
-/* Scrollable table container */
-.table-box {
-    max-width: 100%;
-    overflow-x: auto;
-    border: 1px solid #d0e8d2;
-    padding: 1rem;
-    border-radius: 0.5rem;
-}
 
-
-/* First column in table header and body should be narrow */
-table th:first-child,
-table td:first-child {
-    width: 1%;
-    white-space: nowrap;
-    text-align: center;
-}
 
 tr.row-invalid {
     background-color: #f8d7da !important;  /* light red background */
@@ -182,4 +173,36 @@ tr.row-invalid td {
     background-color: white;
     border: 1px solid #999;
     border-radius: 3px;
+}
+
+/* Remove all rounding from tables */
+.table,
+.table thead th,
+.table th,
+.table td {
+    border-radius: 0 !important;
+}
+
+/* Make sure headers don’t look pill-like */
+.table thead th {
+    border: 1px solid #000;      /* sharp black borders */
+}
+
+/* Remove bootstrap roundness */
+:root {
+    --bs-border-radius: 0;
+    --bs-border-radius-sm: 0;
+    --bs-border-radius-lg: 0;
+    --bs-border-radius-xl: 0;
+    --bs-border-radius-xxl: 0;
+    --bs-btn-border-radius: 0;
+    --bs-card-border-radius: 0;
+    --bs-input-border-radius: 0;
+}
+
+/* Remove modal roundness */
+.modal-content,
+.modal-header,
+.modal-footer {
+    border-radius: 0 !important;
 }

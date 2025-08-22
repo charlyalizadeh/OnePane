@@ -39,6 +39,7 @@ function updateTab(rows, tabId) {
             layout: {
                 topStart: ['pageLength', 'buttons']
             },
+            buttons: ['colvis'],
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             pageLength: 50,
             scrollX: true,

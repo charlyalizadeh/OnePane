@@ -43,21 +43,23 @@ def get_df_device_safe(cur, validity_rules):
 @app.route("/update_devices/<tab_id>")
 def update_devices(tab_id):
     # TODO: remove this hard coded dict (present also in main)
+    tab_id = tab_id.replace('-', '_')
+    tab_name = tab_id.replace('_devices', '')
     unique = {
-        "ad": [["device"]],
-        "intune": [["managed_device_name"]],
-        "endpoint": [["device"]],
-        "tenable_sensor": [["uuid"], ["id"]],
-        "entra": [["id"]]
+        "ad_devices": [["device"]],
+        "intune_devices": [["managed_device_name"]],
+        "endpoint_devices": [["device"]],
+        "tenable_sensor_devices": [["uuid"], ["id"]],
+        "entra_devices": [["id"]]
     }
     try:
         con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
-        out = PROJECT_PATH / f"data/{tab_id}_devices.csv"
-        api_to_csv(tab_id, out)
+        out = PROJECT_PATH / f"data/{tab_id}.csv"
+        api_to_csv(tab_name, out)
         df = pl.read_csv(out)
-        df = clean_df(tab_id, df)
-        update_table_from_df(cur, df, f"{tab_id}_devices", unique[tab_id][0][0])
+        df = clean_df(tab_name, df)
+        update_table_from_df(cur, df, f"{tab_id}", unique[tab_id][0][0])
         con.commit()
         con.close()
         return jsonify({'status': 'success'}), 200
