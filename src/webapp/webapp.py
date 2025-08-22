@@ -1,12 +1,9 @@
-from flask import Flask, render_template, make_response, jsonify, redirect, url_for
+from flask import Flask, render_template, make_response, jsonify, redirect, url_for, request
 import sqlite3
-import polars as pl
 
-from config import DB_PATH, PROJECT_PATH
-from db import get_df_from_table, get_validity_rules_dict, update_table_from_df
-from api_to_csv import api_to_csv
-from process import get_df_device
-from clean import clean_df
+from config import DB_PATH
+from db import getdb_validity_rules_dict, getdb_module, setdb_module_state
+from modules import *
 
 
 app = Flask(__name__)
@@ -20,48 +17,29 @@ def execute_query_safe(cur, query):
 
 def get_validity_rules_safe(cur):
     try:
-        validity_rules = get_validity_rules_dict(cur)
+        validity_rules = getdb_validity_rules_dict(cur)
         return validity_rules
     except:
         return jsonify({'status': 'error', 'message': f'Error retriving validity rules'}), 500
 
 def get_df_device_safe(cur, validity_rules):
+    df_device = None
     try:
-        df_ad = get_df_from_table(cur, "ad_devices")
-        df_intune = get_df_from_table(cur, "intune_devices")
-        df_endpoint = get_df_from_table(cur, "endpoint_devices")
-        df_tenable_sensor = get_df_from_table(cur, "tenable_sensor_devices")
-        df_entra = get_df_from_table(cur, "entra_devices")
-        validity_rules = get_validity_rules_dict(cur)
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        modules = [get_module(name[0]) for name in getdb_module(cur, [1])]
+        validity_rules = getdb_validity_rules_dict(cur)
+        df_device = join_devices_module(modules, validity_rules)
     except:
         return jsonify({'status': 'error', 'message': f'Error retriving all polars df from database'}), 500
-    df_device = get_df_device(validity_rules, df_ad, df_intune, df_endpoint, df_tenable_sensor, df_entra)
-
     return df_device
 
 # Per tools
 @app.route("/update_devices/<tab_id>")
 def update_devices(tab_id):
-    # TODO: remove this hard coded dict (present also in main)
-    tab_id = tab_id.replace('-', '_')
-    tab_name = tab_id.replace('_devices', '')
-    unique = {
-        "ad_devices": [["device"]],
-        "intune_devices": [["managed_device_name"]],
-        "endpoint_devices": [["device"]],
-        "tenable_sensor_devices": [["uuid"], ["id"]],
-        "entra_devices": [["id"]]
-    }
     try:
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
-        out = PROJECT_PATH / f"data/{tab_id}.csv"
-        api_to_csv(tab_name, out)
-        df = pl.read_csv(out)
-        df = clean_df(tab_name, df)
-        update_table_from_df(cur, df, f"{tab_id}", unique[tab_id][0][0])
-        con.commit()
-        con.close()
+        module = get_module(tab_id)
+        module.update()
         return jsonify({'status': 'success'}), 200
     except:
         return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
@@ -96,23 +74,18 @@ def get_devices(table_id):
 def split():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-
-    tables = [
-            {"table_name": "ad_devices", "name": "Active Directory"},
-            {"table_name": "intune_devices", "name": "Intune"},
-            {"table_name": "endpoint_devices", "name": "ManageEngine Endpoint"},
-            {"table_name": "tenable_sensor_devices", "name": "Tenable Sensors"},
-            {"table_name": "entra_devices", "name": "Entra ID"}
-    ]
+    modules = [get_module(name[0]) for name in getdb_module(cur, [1])]
+    tables = [{
+        "name": module.name,
+        "display_name": module.display_name
+    } for module in modules]
     for i, table in enumerate(tables):
-        tables[i]["html_name"] = table["table_name"].replace("_", "-")
-        execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{table['table_name']}')")
+        execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{table['name']}')")
         colnames = [r[0] for r in cur.fetchall()]
         # Make the `device` column the first one
         colnames.remove("device")
         colnames = ["device"] + colnames
         tables[i]["colnames"] = colnames
-
     con.close()
     return render_template("split.html", tables=tables)
 
@@ -127,7 +100,6 @@ def get_all_devices():
 
     return make_response({'rows': df_device.rows()})
 
-@app.route("/")
 @app.route("/merged")
 def merged():
     con = sqlite3.connect(DB_PATH)
@@ -167,3 +139,22 @@ def event_devices():
                "events.html",
                events=rows
            )
+
+@app.route("/set_module_state/<module>/<state>")
+def set_module_state(module, state):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    setdb_module_state(cur, module, int(state))
+    con.commit()
+    con.close()
+    return redirect(url_for("index"))
+
+@app.route("/")
+def index():
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    module_activated = {row[0]: row[1] for row in getdb_module(cur, [0, 1])}
+    modules = [get_module(key) for key in module_activated.keys()]
+    if len(getdb_module(cur, [1])) >= 2:
+        return redirect(url_for('merged'))
+    return render_template("index.html", module_activated=module_activated, modules=modules)

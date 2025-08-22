@@ -19,6 +19,7 @@ SQLITE_RESERVED = {
     "VIEW", "VIRTUAL", "WHEN", "WHERE", "WITH", "WITHOUT"
 }
 
+# Utilities
 def sanitize_sqlite_column_name(name):
     sanitized = re.sub(r'\W', '_', name)
     if re.match(r'^\d', sanitized):
@@ -39,6 +40,7 @@ def polars_to_sqlite_type(pl_dtype):
     else:
         return "TEXT"
 
+# Create tables
 def create_table_from_df(cur, df, table, unique=[]):
     query = f"CREATE TABLE IF NOT EXISTS {table} (\n"
     for i, (coltype, col) in enumerate(zip(df.dtypes, df.columns)):
@@ -56,6 +58,36 @@ def create_table_from_df(cur, df, table, unique=[]):
     query += ");"
     cur.execute(query)
 
+def create_table_event(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS event_devices (
+            type TEXT,
+            device TEXT,
+            source TEXT,
+            date TEXT
+        );
+    """)
+
+def create_table_validity_rules(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS validity_rules (
+            category TEXT,
+            tool TEXT,
+            value INTEGER,
+            UNIQUE(category,tool)
+        );
+    """)
+
+def create_table_modules(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS modules (
+            name TEXT,
+            value INTEGER,
+            UNIQUE(name)
+        );
+    """)
+
+# Insert/Update data
 #TODO: not the most efficient, but for max 100 rows it doesn't matter
 def insert_added_event(cur, df, table, col):
     query = f"SELECT {col}, device FROM {table}"
@@ -89,7 +121,28 @@ def fill_table_from_df(cur, df, table):
     insert_query = f"INSERT OR REPLACE INTO {table} VALUES ({placeholders})"
     cur.executemany(insert_query, df.rows())
 
-def get_df_from_table(cur, table, prefix=""):
+def update_table_from_df(cur, df, table, col):
+    not_in_df = insert_deleted_event(cur, df, table, col)
+    insert_added_event(cur, df, table, col)
+    fill_table_from_df(cur, df, table)
+    if not not_in_df:
+        return
+    if get_table_col_type(cur, table, col) == 'TEXT':
+        not_in_df = [f"'{val[0]}'" for val in not_in_df]
+    query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
+    cur.execute(query)
+
+def fill_modules(cur, modules):
+    modules = [(m, 0) for m in modules]
+    insert_query = f"INSERT OR IGNORE INTO modules VALUES (?, ?)"
+    cur.executemany(insert_query, modules)
+
+def setdb_module_state(cur, module, state):
+    query = f"UPDATE modules SET value = {state} WHERE name = '{module}'"
+    cur.execute(query)
+
+# Retrieve data
+def getdb_df_from_table(cur, table, prefix=""):
     query = f"SELECT * FROM {table}"
     cur.execute(query)
     rows = cur.fetchall()
@@ -97,46 +150,11 @@ def get_df_from_table(cur, table, prefix=""):
     df = pl.from_records(rows, schema=colnames, orient="row")
     return df
 
-def create_table_event(cur):
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS event_devices (
-            type TEXT,
-            device TEXT,
-            source TEXT,
-            date TEXT
-        );
-    """)
-
-def create_table_validity_rules(cur):
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS validity_rules (
-            category TEXT,
-            tool TEXT,
-            value INTEGER,
-            UNIQUE(category,tool)
-        );
-    """)
-
-def fill_table_validity_rules_with_default(cur, force=False):
-    values = []
-    for category, table_dict in config.default_validity_rules.items():
-        for table, value in table_dict.items():
-            values.append([category, table, value])
-    insert_query = ""
-    if force:
-        insert_query = "INSERT OR REPLACE INTO validity_rules VALUES (?, ?, ?)"
-    else:
-        insert_query = "INSERT OR IGNORE INTO validity_rules VALUES (?, ?, ?)"
-    cur.executemany(insert_query, values)
-
-def get_validity_rules_dict(cur):
+def getdb_validity_rules_dict(cur):
     if not is_table(cur, "validity_rules"):
         create_table_validity_rules(cur)
-        fill_table_validity_rules_with_default(cur)
     cur.execute("SELECT DISTINCT category FROM validity_rules")
     categories = cur.fetchall()
-    if len(categories) != len(config.default_validity_rules):
-        fill_table_validity_rules_with_default(cur)
 
     query = "SELECT category, tool, value FROM validity_rules"
     cur.execute(query)
@@ -148,6 +166,17 @@ def get_validity_rules_dict(cur):
             validity_rules[row[0]] = {}
         validity_rules[row[0]][row[1]] = row[2]
     return validity_rules
+
+def getdb_module(cur, value=[0, 1]):
+    value = map(str, value)
+    query = f"SELECT * FROM modules WHERE value in ({','.join(value)})"
+    cur.execute(query)
+    return cur.fetchall()
+
+def getdb_table_col_type(cur, table, table_col):
+    query = f"SELECT type FROM pragma_table_info('{table}') WHERE name = '{table_col}';"
+    cur.execute(query)
+    return cur.fetchone()[0]
 
 def is_table(cur, table):
     cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
@@ -161,19 +190,3 @@ def is_table_empty(cur, table):
     if not cur.fetchall():
         return True
     return False
-
-def get_table_col_type(cur, table, table_col):
-    query = f"SELECT type FROM pragma_table_info('{table}') WHERE name = '{table_col}';"
-    cur.execute(query)
-    return cur.fetchone()[0]
-
-def update_table_from_df(cur, df, table, col):
-    not_in_df = insert_deleted_event(cur, df, table, col)
-    insert_added_event(cur, df, table, col)
-    fill_table_from_df(cur, df, table)
-    if not not_in_df:
-        return
-    if get_table_col_type(cur, table, col) == 'TEXT':
-        not_in_df = [f"'{val[0]}'" for val in not_in_df]
-    query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
-    cur.execute(query)

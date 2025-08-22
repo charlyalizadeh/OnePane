@@ -4,7 +4,7 @@ param (
 
 if($PSVersionTable.PSVersion.Major -eq 5) {
     $csvStr = "Name,Enabled$([Environment]::NewLine)"
-    $computers = Get-ADComputer -Filter * | Select Name,Enabled, IPv4Address
+    $computers = Get-ADComputer -Filter * | Select Name,Enabled,IPv4Address
     $computers | % { 
         $csvStr += "$($_.Name),$($_.Enabled)"
         if($_ -ne $computers[-1]) {
@@ -15,6 +15,6 @@ if($PSVersionTable.PSVersion.Major -eq 5) {
 }
 else {
     Get-ADComputer -Filter * | `
-        Select Name,Enabled | `
+        Select Name,Enabled,IP4Address | `
         Export-Csv -Path $Out -UseQuotes Never
 }
