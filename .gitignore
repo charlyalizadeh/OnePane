@@ -5,3 +5,4 @@ __pycache__
 .profile
 .credentials.json
 pyrightconfig.json
+db
