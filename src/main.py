@@ -14,11 +14,12 @@ if __name__ == "__main__":
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
-    create_table_event(cur)
-    create_table_validity_rules(cur)
-    create_table_modules(cur)
-    if is_table_empty(cur, "modules"):
-        fill_modules(cur, [
+    db_create_table_event(cur)
+    db_create_table_category_rules(cur)
+    db_create_table_validity_rules(cur)
+    db_create_table_modules(cur)
+    if db_is_table_empty(cur, "modules"):
+        db_fill_modules(cur, [
             "ad_devices",
             "intune_devices",
             "entra_devices",

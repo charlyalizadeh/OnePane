@@ -2,7 +2,7 @@ from flask import Flask, render_template, make_response, jsonify, redirect, url_
 import sqlite3
 
 from config import DB_PATH
-from db import getdb_validity_rules_dict, getdb_module, setdb_module_state
+from db import db_get_validity_rules_dict, db_get_module, db_set_module_state
 from modules import *
 
 
@@ -17,21 +17,22 @@ def execute_query_safe(cur, query):
 
 def get_validity_rules_safe(cur):
     try:
-        validity_rules = getdb_validity_rules_dict(cur)
+        validity_rules = db_get_validity_rules_dict(cur)
         return validity_rules
     except:
         return jsonify({'status': 'error', 'message': f'Error retriving validity rules'}), 500
 
 def get_df_device_safe(cur, validity_rules):
     df_device = None
-    try:
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
-        modules = [get_module(name[0]) for name in getdb_module(cur, [1])]
-        validity_rules = getdb_validity_rules_dict(cur)
-        df_device = join_devices_module(modules, validity_rules)
-    except:
-        return jsonify({'status': 'error', 'message': f'Error retriving all polars df from database'}), 500
+    #try:
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
+    category_rules = db_get_category_rules_dict(cur)
+    validity_rules = db_get_validity_rules_dict(cur)
+    df_device = join_devices_module(modules, category_rules, validity_rules)
+    #except:
+    #    return jsonify({'status': 'error', 'message': f'Error retriving all polars df from database'}), 500
     return df_device
 
 # Per tools
@@ -74,7 +75,7 @@ def get_devices(table_id):
 def split():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    modules = [get_module(name[0]) for name in getdb_module(cur, [1])]
+    modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
     tables = [{
         "name": module.name,
         "display_name": module.display_name
@@ -87,6 +88,7 @@ def split():
         colnames = ["device"] + colnames
         tables[i]["colnames"] = colnames
     con.close()
+    print(tables)
     return render_template("split.html", tables=tables)
 
 # All devices
@@ -106,6 +108,7 @@ def merged():
     cur = con.cursor()
 
     validity_rules = get_validity_rules_safe(cur)
+    print(validity_rules)
     df_device = get_df_device_safe(cur, validity_rules)
 
     return render_template(
@@ -144,17 +147,15 @@ def event_devices():
 def set_module_state(module, state):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    setdb_module_state(cur, module, int(state))
+    db_set_module_state(cur, module, int(state))
     con.commit()
     con.close()
-    return redirect(url_for("index"))
+    return redirect(url_for("modules"))
 
-@app.route("/")
-def index():
+@app.route("/modules")
+def modules():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    module_activated = {row[0]: row[1] for row in getdb_module(cur, [0, 1])}
+    module_activated = {row[0]: row[1] for row in db_get_module(cur, [0, 1])}
     modules = [get_module(key) for key in module_activated.keys()]
-    if len(getdb_module(cur, [1])) >= 2:
-        return redirect(url_for('merged'))
-    return render_template("index.html", module_activated=module_activated, modules=modules)
+    return render_template("modules.html", module_activated=module_activated, modules=modules)

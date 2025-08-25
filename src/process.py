@@ -7,24 +7,41 @@ def add_prefix_column_names(df, prefix, exclude=[]):
     rename_dict = {c:f'{prefix}{c}' for c in df.columns if c not in exclude}
     return df.rename(rename_dict)
 
-def join_devices_module(modules, validity_rules):
+def join_devices_module(modules, category_rules, validity_rules):
     # Requires at least 2 modules
     if len(modules) < 2:
         return None
 
-    # Join all the data
-    df_device = modules[0].df
-    for module in modules[1:]:
-        df_device = df_device.join(module.df, on="device", how="full", coalesce=True)
+    # Add prefix
+    dfs = {}
     for module in modules:
-        df_device = df_device.with_columns((pl.col(module.name).fill_null(False)))
+        dfs[module.name] = add_prefix_column_names(module.df, module.name, exclude=["device"])
+        dfs[module.name] = dfs[module.name].with_columns(pl.Series(name=module.name, values=[True] * module.df.height))
+
+    # Join all the data
+    df_device = None
+    for i, df in enumerate(dfs.values()):
+        if i == 0:
+            df_device = df
+        else:
+            df_device = df_device.join(df, on="device", how="full", coalesce=True)
     
     # Add category
-    df_device = df_device.with_columns((pl.col("device").map_elements(get_device_category, return_dtype=pl.datatypes.String)).alias("category"))
+    if category_rules:
+        df_device = df_device.with_columns((pl.col("device").map_elements(get_device_category, return_dtype=pl.datatypes.String)).alias("category"))
 
     # Add validity column
-    func1 = lambda row: check_device_validity(row, validity_rules)
-    df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1, return_dtype=pl.datatypes.Int8).alias("validity"))
+    if category_rules and validity_rules:
+        func1 = lambda row: check_device_validity(row, validity_rules)
+        df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1, return_dtype=pl.datatypes.Int8).alias("validity"))
+
+    first_cols = ["device"] 
+    if category_rules:
+        first_cols += ["category"]
+    first_cols += [module.name for module in modules]
+    if validity_rules:
+        first_cols += ["validity"]
+    df_device = df_device.select(first_cols)
 
     # Select desired columns
     return df_device

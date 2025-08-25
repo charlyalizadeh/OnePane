@@ -20,7 +20,7 @@ SQLITE_RESERVED = {
 }
 
 # Utilities
-def sanitize_sqlite_column_name(name):
+def _sanitize_sqlite_column_name(name):
     sanitized = re.sub(r'\W', '_', name)
     if re.match(r'^\d', sanitized):
         sanitized = '_' + sanitized
@@ -28,7 +28,7 @@ def sanitize_sqlite_column_name(name):
         sanitized += "_col"
     return sanitized
 
-def polars_to_sqlite_type(pl_dtype):
+def _polars_to_sqlite_type(pl_dtype):
     if pl_dtype == pl.Utf8:
         return "TEXT"
     elif pl_dtype in (pl.Int64, pl.Int32, pl.UInt32, pl.UInt64):
@@ -41,11 +41,11 @@ def polars_to_sqlite_type(pl_dtype):
         return "TEXT"
 
 # Create tables
-def create_table_from_df(cur, df, table, unique=[]):
+def db_create_table_from_df(cur, df, table, unique=[]):
     query = f"CREATE TABLE IF NOT EXISTS {table} (\n"
     for i, (coltype, col) in enumerate(zip(df.dtypes, df.columns)):
-        sqlite_type = polars_to_sqlite_type(coltype)
-        col = sanitize_sqlite_column_name(col)
+        sqlite_type = _polars_to_sqlite_type(coltype)
+        col = _sanitize_sqlite_column_name(col)
         query += f"    {col} {sqlite_type}"
         if i < len(df.columns) - 1 or unique:
             query += ','
@@ -58,7 +58,7 @@ def create_table_from_df(cur, df, table, unique=[]):
     query += ");"
     cur.execute(query)
 
-def create_table_event(cur):
+def db_create_table_event(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS event_devices (
             type TEXT,
@@ -68,7 +68,17 @@ def create_table_event(cur):
         );
     """)
 
-def create_table_validity_rules(cur):
+def db_create_table_category_rules(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS category_rules (
+            category TEXT,
+            regex TEXT,
+            UNIQUE(category)
+        );
+    """)
+
+
+def db_create_table_validity_rules(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS validity_rules (
             category TEXT,
@@ -78,7 +88,7 @@ def create_table_validity_rules(cur):
         );
     """)
 
-def create_table_modules(cur):
+def db_create_table_modules(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS modules (
             name TEXT,
@@ -89,7 +99,7 @@ def create_table_modules(cur):
 
 # Insert/Update data
 #TODO: not the most efficient, but for max 100 rows it doesn't matter
-def insert_added_event(cur, df, table, col):
+def db_insert_added_event(cur, df, table, col):
     query = f"SELECT {col}, device FROM {table}"
     cur.execute(query)
     rows = list(cur.fetchall())
@@ -103,7 +113,7 @@ def insert_added_event(cur, df, table, col):
             not_in_table.append([col_val, device])
     return not_in_table
 
-def insert_deleted_event(cur, df, table, col):
+def db_insert_deleted_event(cur, df, table, col):
     query = f"SELECT {col}, device FROM {table}"
     cur.execute(query)
     rows = list(cur.fetchall())
@@ -116,15 +126,15 @@ def insert_deleted_event(cur, df, table, col):
             not_in_df.append(row)
     return not_in_df
 
-def fill_table_from_df(cur, df, table):
+def db_fill_table_from_df(cur, df, table):
     placeholders = ', '.join(["?"] * df.width)
     insert_query = f"INSERT OR REPLACE INTO {table} VALUES ({placeholders})"
     cur.executemany(insert_query, df.rows())
 
-def update_table_from_df(cur, df, table, col):
-    not_in_df = insert_deleted_event(cur, df, table, col)
-    insert_added_event(cur, df, table, col)
-    fill_table_from_df(cur, df, table)
+def db_update_table_from_df(cur, df, table, col):
+    not_in_df = db_insert_deleted_event(cur, df, table, col)
+    db_insert_added_event(cur, df, table, col)
+    db_fill_table_from_df(cur, df, table)
     if not not_in_df:
         return
     if get_table_col_type(cur, table, col) == 'TEXT':
@@ -132,17 +142,17 @@ def update_table_from_df(cur, df, table, col):
     query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
     cur.execute(query)
 
-def fill_modules(cur, modules):
+def db_fill_modules(cur, modules):
     modules = [(m, 0) for m in modules]
     insert_query = f"INSERT OR IGNORE INTO modules VALUES (?, ?)"
     cur.executemany(insert_query, modules)
 
-def setdb_module_state(cur, module, state):
+def db_set_module_state(cur, module, state):
     query = f"UPDATE modules SET value = {state} WHERE name = '{module}'"
     cur.execute(query)
 
 # Retrieve data
-def getdb_df_from_table(cur, table, prefix=""):
+def db_get_df_from_table(cur, table, prefix=""):
     query = f"SELECT * FROM {table}"
     cur.execute(query)
     rows = cur.fetchall()
@@ -150,12 +160,15 @@ def getdb_df_from_table(cur, table, prefix=""):
     df = pl.from_records(rows, schema=colnames, orient="row")
     return df
 
-def getdb_validity_rules_dict(cur):
-    if not is_table(cur, "validity_rules"):
-        create_table_validity_rules(cur)
-    cur.execute("SELECT DISTINCT category FROM validity_rules")
-    categories = cur.fetchall()
+def db_get_category_rules_dict(cur):
+    query = "SELECT category, regex FROM category_rules"
+    cur.execute(query)
+    category_rules = {k:v for k, v in cur.fetchall()}
+    return category_rules
 
+def db_get_validity_rules_dict(cur):
+    if not db_is_table(cur, "validity_rules"):
+        create_table_validity_rules(cur)
     query = "SELECT category, tool, value FROM validity_rules"
     cur.execute(query)
     rows = cur.fetchall()
@@ -167,23 +180,23 @@ def getdb_validity_rules_dict(cur):
         validity_rules[row[0]][row[1]] = row[2]
     return validity_rules
 
-def getdb_module(cur, value=[0, 1]):
+def db_get_module(cur, value=[0, 1]):
     value = map(str, value)
     query = f"SELECT * FROM modules WHERE value in ({','.join(value)})"
     cur.execute(query)
     return cur.fetchall()
 
-def getdb_table_col_type(cur, table, table_col):
+def db_get_table_col_type(cur, table, table_col):
     query = f"SELECT type FROM pragma_table_info('{table}') WHERE name = '{table_col}';"
     cur.execute(query)
     return cur.fetchone()[0]
 
-def is_table(cur, table):
+def db_is_table(cur, table):
     cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
     return cur.fetchall() != []
 
-def is_table_empty(cur, table):
-    if not is_table(cur, table):
+def db_is_table_empty(cur, table):
+    if not db_is_table(cur, table):
         return True
     query = f"SELECT * FROM {table}"
     cur.execute(query)

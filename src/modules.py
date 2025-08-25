@@ -1,8 +1,12 @@
 import polars as pl
 from pathlib import Path
+import sqlite3
+import subprocess
+import requests
 
 from config import *
 from process import *
+from db import *
 from connect.connect_microsoft_graph import get_graph_access_token
 
 
@@ -13,33 +17,53 @@ class DevicesModule:
         self.display_source = display_source
         self.name = name
         self.display_name = display_name
-        self.csv_path = PROJECT_PATH / f"data/{self.name}.csv"
-        self.df = pl.read_csv(self.csv_path)
         self.unique_columns = unique_columns
+        self.csv_path = PROJECT_PATH / f"data/{self.name}.csv"
+
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        if db_is_table_empty(cur, self.name):
+            self.update()
+        else:
+            self.load_data_from_db()
+        con.close()
 
         assert len(self.unique_columns[0]) == 1
 
-    def add_prefix(self):
-        print("[{self.display_name}]: Adding prefix 'self.name' to the headers (excluding: ['device'])")
-        self.df = add_prefix_column_names(self.df, self.name, ["device"])
-        self.df = self.df.with_columns(pl.Series(name=self.name, values=[True] * self.df.height))
+    def load_data_from_csv(self):
+        print(f"[{self.display_name}]: Loading data from CSV file ({self.csv_path})")
+        self.df = pl.read_csv(self.csv_path)
+
+    def load_data_from_db(self):
+        print(f"[{self.display_name}]: Loading data from database")
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        self.df = db_get_df_from_table(cur, self.name)
+        con.close()
 
     def clean(self):
-        print("[{self.display_name}]: Cleaning")
+        print(f"[{self.display_name}]: Cleaning")
         pass
 
     def api_to_csv(self):
-        print("[{self.display_name}]: API to CSV ({self.csv_path})")
+        print(f"[{self.display_name}]: API to CSV ({self.csv_path})")
         pass
 
     def update(self):
         try:
             self.api_to_csv()
         except NotImplementedError:
-            print("[{self.dipslay_name}]: API importation not implemented")
+            print(f"[{self.display_name}]: API importation not implemented")
+        self.load_data_from_csv()
         self.clean()
-        create_table_from_df(cur, self.df, self.name, self.unique)
-        update_table_from_df(cur, self.df, self.name, self.unique[0][0])
+
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        db_create_table_from_df(cur, self.df, self.name, self.unique_columns)
+        db_update_table_from_df(cur, self.df, self.name, self.unique_columns[0][0])
+        con.commit()
+        con.close()
+
 
 class ADDevicesModule(DevicesModule):
     def __init__(self):
@@ -48,7 +72,7 @@ class ADDevicesModule(DevicesModule):
     def clean(self):
         super().clean()
         self.df = self.df.rename({"Name": "device"})
-        self.df = fix_column_names_space(self.df)
+        self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
 
     def api_to_csv(self):
@@ -70,7 +94,7 @@ class IntuneDevicesModule(DevicesModule):
     def clean(self):
         super().clean()
         self.df = self.df.rename({"deviceName": "device"})
-        self.df = fix_column_names_pascal_case(self.df)
+        self.df = set_column_names_pascal_case(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
         self.df = self.df.with_columns(
                 (pl.col("last_sync_date_time").str.split('.').list.first().str.to_date(format="%Y-%m-%dT%H:%M:%SZ")).alias("last_sync_date_time")
@@ -101,7 +125,7 @@ class EntraDevicesModule(DevicesModule):
     def clean(self):
         super().clean()
         self.df = self.df.rename({"displayName": "device"})
-        self.df = fix_column_names_pascal_case(self.df)
+        self.df = set_column_names_pascal_case(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
         self.df = self.df.with_columns(
                 (pl.col("registration_date_time") \
@@ -143,7 +167,7 @@ class EndpointDevicesModule(DevicesModule):
     def clean(self):
         super().clean()
         self.df = self.df.rename({"Computer Name": "device"})
-        self.df = fix_column_names_space(self.df)
+        self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
         self.df = self.df.with_columns(
                 (pl.col("last_successful_scan").str.to_date(format="%b %d, %Y %I:%M %p")).alias("last_successful_scan")
@@ -159,7 +183,7 @@ class TenableSensorDevicesModule(DevicesModule):
 
     def clean_csv(self):
         self.df = self.df.rename({"Agent Name": "device"})
-        self.df = fix_column_names_space(self.df)
+        self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().str.split('.').list.first().alias("device"))
         self.df = self.df.with_columns(
                 (pl.col("linked_on").str.split('.').list.first().str.to_date(format="%Y-%m-%dT%H:%M:%S")).alias("linked_on")
@@ -171,7 +195,7 @@ class TenableSensorDevicesModule(DevicesModule):
     def clean(self):
         super().clean()
         self.df = self.df.rename({"name": "device"})
-        self.df = fix_column_names_space(self.df)
+        self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase())
         self.df = self.df.with_columns(pl.from_epoch("linked_on", time_unit="ms").alias("linked_on"))
         self.df = self.df.with_columns(pl.from_epoch("last_connect", time_unit="ms").alias("last_connect"))
@@ -195,6 +219,7 @@ class TenableSensorDevicesModule(DevicesModule):
             response["agents"][i]["groups"] = val
         df = pl.from_dicts(response["agents"])
         df.write_csv(self.csv_path)
+
 
 def get_module(name):
     if name == "ad_devices":

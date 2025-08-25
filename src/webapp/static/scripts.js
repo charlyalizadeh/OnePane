@@ -47,7 +47,8 @@ function updateTab(rows, tabId) {
             colResize: { isEnabled: true },
             createdRow: function (row, data, dataIndex) {
                 if(tabId != "devices") { return }
-                const isValid = data[data.length - 1] == trueDisplay
+                if(!("valid" in data)) { return }
+                const isValid = data.validity == trueDisplay
                 if (isValid) {
                     $(row).addClass('row-valid')
                 } else {
@@ -85,6 +86,7 @@ function updateTab(rows, tabId) {
     dt.draw()
 }
 function refreshTab(tabId, update) {
+    console.log(tabId)
     const btn = document.getElementById(`refresh-${tabId}`)
     const btnText = document.getElementById(`refresh-${tabId}-text`)
 
