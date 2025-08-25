@@ -58,13 +58,12 @@ def db_create_table_from_df(cur, df, table, unique=[]):
     query += ");"
     cur.execute(query)
 
-def db_create_table_event(cur):
+def db_create_table_modules(cur):
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS event_devices (
-            type TEXT,
-            device TEXT,
-            source TEXT,
-            date TEXT
+        CREATE TABLE IF NOT EXISTS modules (
+            name TEXT,
+            value INTEGER,
+            UNIQUE(name)
         );
     """)
 
@@ -77,27 +76,42 @@ def db_create_table_category_rules(cur):
         );
     """)
 
-
 def db_create_table_validity_rules(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS validity_rules (
             category TEXT,
-            tool TEXT,
+            module TEXT,
             value INTEGER,
-            UNIQUE(category,tool)
+            UNIQUE(category,module)
+            FOREIGN KEY(category) REFERENCES category_rules(category) ON DELETE CASCADE
+            FOREIGN KEY(module) REFERENCES modules(name) ON DELETE CASCADE
         );
     """)
 
-def db_create_table_modules(cur):
+def db_create_table_event(cur):
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS modules (
-            name TEXT,
-            value INTEGER,
-            UNIQUE(name)
+        CREATE TABLE IF NOT EXISTS event_devices (
+            type TEXT,
+            device TEXT,
+            source TEXT,
+            date TEXT
         );
     """)
+
 
 # Insert/Update data
+
+## Modules
+def db_fill_modules(cur, modules):
+    modules = [(m, 0) for m in modules]
+    insert_query = f"INSERT OR IGNORE INTO modules VALUES (?, ?)"
+    cur.executemany(insert_query, modules)
+
+def db_set_module_state(cur, module, state):
+    query = f"UPDATE modules SET value = {state} WHERE name = '{module}'"
+    cur.execute(query)
+
+## Events
 #TODO: not the most efficient, but for max 100 rows it doesn't matter
 def db_insert_added_event(cur, df, table, col):
     query = f"SELECT {col}, device FROM {table}"
@@ -126,6 +140,7 @@ def db_insert_deleted_event(cur, df, table, col):
             not_in_df.append(row)
     return not_in_df
 
+## Dataframe
 def db_fill_table_from_df(cur, df, table):
     placeholders = ', '.join(["?"] * df.width)
     insert_query = f"INSERT OR REPLACE INTO {table} VALUES ({placeholders})"
@@ -142,14 +157,36 @@ def db_update_table_from_df(cur, df, table, col):
     query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
     cur.execute(query)
 
-def db_fill_modules(cur, modules):
-    modules = [(m, 0) for m in modules]
-    insert_query = f"INSERT OR IGNORE INTO modules VALUES (?, ?)"
-    cur.executemany(insert_query, modules)
+## Category rules
+def db_update_category_rules(cur, rules):
+    # Update and add new rules
+    query = "INSERT OR REPLACE INTO category_rules VALUES (?, ?)"
+    cur.executemany(query, rules)
 
-def db_set_module_state(cur, module, state):
-    query = f"UPDATE modules SET value = {state} WHERE name = '{module}'"
+    # Delete rules not present in `rules`
+    pk = [rule[0] for rule in rules]
+    query = f"DELETE FROM category_rules WHERE category NOT IN ({','.join(pk)})"
     cur.execute(query)
+
+def db_set_category_rule(cur, category, regex):
+    query = f"INSERT OR REPLACE INTO category_rules VALUES ('{category}', '{regex}')"
+    cur.execute(query)
+
+## Validity rules
+def db_update_validity_rules(cur, rules):
+    # Update and add new rules
+    query = "INSERT INTO validity_rules VALUES (?, ?, ?)"
+    cur.executemany(query, rules)
+
+    # Delete rules not present in `rules`
+    pk = [f"({rule[0]}, {rule[1]})" for rule in rules]
+    query = f"DELETE FROM validity_rules WHERE (category, module) NOT IN ({','.join(pk)})"
+    cur.execute(query)
+
+def db_set_validity_rules(cur, category, module, value):
+    query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module}', {value})"
+    cur.execute(query)
+
 
 # Retrieve data
 def db_get_df_from_table(cur, table, prefix=""):
@@ -169,7 +206,7 @@ def db_get_category_rules_dict(cur):
 def db_get_validity_rules_dict(cur):
     if not db_is_table(cur, "validity_rules"):
         create_table_validity_rules(cur)
-    query = "SELECT category, tool, value FROM validity_rules"
+    query = "SELECT category, module, value FROM validity_rules"
     cur.execute(query)
     rows = cur.fetchall()
 

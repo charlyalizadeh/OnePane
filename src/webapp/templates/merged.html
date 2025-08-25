@@ -6,8 +6,54 @@
     <span id="refresh-devices-text"><i class="bi bi-arrow-clockwise"></i></span>
 </button>
 
+<!-- Edit category rules -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-category-rules">
+  Edit category rules
+</button>
+<div class="modal fade" id="edit-category-rules" tabindex="-1" aria-labelledby="edit-category-rules-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="edit-validity-rules-title">Category rules</h1>
+            </div>
+            <div class="modal-body">
+                <table id="edit-category-rules-table" class="table table-striped table-bordered table-sm table-edit-category-rule">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Regex</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category, regex in category_rules.items() %}
+                        <tr id="rule-{{ loop.index0 }}">
+                            <td>{{ category }}</td>
+                            <td>{{ regex }}</td>
+                            <td>
+                                <button class="btn btn-link p-0" onclick="delCategoryRule('rule-{{ loop.index0 }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <span class="d-flex gap-2">
+                    <input id="input-category" type="text" class="form-control" placeholder="Category" aria-label="Category" aria-describedby="category">
+                    <input id="input-regex" type="text" class="form-control" placeholder="Regex" aria-label="Regex" aria-describedby="regex">
+                    <button type="button" class="btn btn-success" onclick="addCategoryRule()">+</button>
+                </span>
+                <button class="btn btn-primary" onclick="commitCategoryRules()">Update rules</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Edit validity rules -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-validity-rules">
+<button type="button btn-primary" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-validity-rules">
   Edit validity rules
 </button>
 <div class="modal fade" id="edit-validity-rules" tabindex="-1" aria-labelledby="edit-validity-rules-label" aria-hidden="true">

@@ -75,7 +75,7 @@ function updateTab(rows, tabId) {
     // Setup the data
     rows.forEach((row, index) => {
         const rowData = [index + 1, ...Object.values(row)]
-        for(let i = 0; i < rowData.length; i++) {
+        for(let i = 1; i < rowData.length; i++) {
             if(rowData[i] == true)
                 rowData[i] = trueDisplay
             if(rowData[i] == false)
@@ -86,7 +86,6 @@ function updateTab(rows, tabId) {
     dt.draw()
 }
 function refreshTab(tabId, update) {
-    console.log(tabId)
     const btn = document.getElementById(`refresh-${tabId}`)
     const btnText = document.getElementById(`refresh-${tabId}-text`)
 
@@ -103,6 +102,52 @@ function refreshTab(tabId, update) {
         .catch(error => {
             setBtnStateFailure(btn, btnText, error)
         })
+}
+
+// Category rules
+function addCategoryRule() {
+    const category = document.getElementById("input-category").value
+    const regex = document.getElementById("input-regex").value
+    const tbody = document.getElementById("edit-category-rules-table").querySelector("tbody")
+    const row = tbody.insertRow()
+    row.id = `rule-${tbody.rows.length}`;
+    row.insertCell().textContent = category
+    row.insertCell().textContent = regex
+    row.insertCell().innerHTML = `<button class="btn btn-link p-0" onclick="delCategoryRule('${row.id}')"> <i class="bi bi-trash"></i> </button>`
+}
+
+function delCategoryRule(id) {
+    const row = document.getElementById(id)
+    if(row) {
+        row.remove()
+    }
+}
+
+function commitCategoryRules() {
+    const tbody = document.getElementById("edit-category-rules-table").querySelector("tbody")
+    const rows = tbody.querySelectorAll("tr")
+    categoryRules = []
+    rows.forEach(row => {
+        const cells = row.querySelectorAll("td")
+        categoryRules.push({
+            "category": cells[0].textContent,
+            "regex": cells[1].textContent
+        })
+    })
+
+    fetch('/set_category_rules', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ rules: categoryRules })
+    })
+    .then(response => response.json())
+    .then(data => { console.log('Server response:', data) })
+    .then(error => console.error('Error:', error))
+
+    let request = new Request(`/set_validity_rule/`)
 }
 
 // Validity rules

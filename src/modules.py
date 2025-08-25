@@ -11,7 +11,7 @@ from connect.connect_microsoft_graph import get_graph_access_token
 
 
 class DevicesModule:
-    def __init__(self, source, display_source, name, display_name, unique_columns):
+    def __init__(self, source, display_source, name, display_name, unique_columns, api=False, **kwargs):
         self.object_category = "devices"
         self.source = source
         self.display_source = display_source
@@ -23,7 +23,14 @@ class DevicesModule:
         con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         if db_is_table_empty(cur, self.name):
-            self.update()
+            if api:
+                self.update()
+            else:
+                try:
+                    self.df = self.load_data_from_csv()
+                except OSError as e:
+                    print(f"[{self.display_name}]: Couldn't load data ({e})")
+                    self.df = polars.DataFrame()
         else:
             self.load_data_from_db()
         con.close()
@@ -66,8 +73,8 @@ class DevicesModule:
 
 
 class ADDevicesModule(DevicesModule):
-    def __init__(self):
-        super().__init__("ad", "AD", "ad_devices", "AD devices", [["device"]])
+    def __init__(self, **kwargs):
+        super().__init__("ad", "AD", "ad_devices", "AD devices", [["device"]], **kwargs)
 
     def clean(self):
         super().clean()
@@ -88,8 +95,8 @@ class ADDevicesModule(DevicesModule):
         )
 
 class IntuneDevicesModule(DevicesModule):
-    def __init__(self):
-        super().__init__("intune", "Intune", "intune_devices", "Intune devices", [["managed_device_name"]])
+    def __init__(self, **kwargs):
+        super().__init__("intune", "Intune", "intune_devices", "Intune devices", [["managed_device_name"]], **kwargs)
 
     def clean(self):
         super().clean()
@@ -119,8 +126,8 @@ class IntuneDevicesModule(DevicesModule):
         df.write_csv(self.csv_path)
 
 class EntraDevicesModule(DevicesModule):
-    def __init__(self):
-        super().__init__("entra", "Entra", "entra_devices", "Entra devices", [["id"]])
+    def __init__(self, **kwargs):
+        super().__init__("entra", "Entra", "entra_devices", "Entra devices", [["id"]], **kwargs)
 
     def clean(self):
         super().clean()
@@ -161,8 +168,8 @@ class EntraDevicesModule(DevicesModule):
         df.write_csv(self.csv_path)
 
 class EndpointDevicesModule(DevicesModule):
-    def __init__(self):
-        super().__init__("endpoint", "Endpoint", "endpoint_devices", "Endpoint devices", [["device"]])
+    def __init__(self, **kwargs):
+        super().__init__("endpoint", "Endpoint", "endpoint_devices", "Endpoint devices", [["device"]], **kwargs)
 
     def clean(self):
         super().clean()
@@ -178,8 +185,8 @@ class EndpointDevicesModule(DevicesModule):
         raise NotImplementedError("Automated importation for ManageEngine Endpoint Central is not implemented.")
 
 class TenableSensorDevicesModule(DevicesModule):
-    def __init__(self):
-        super().__init__("tenable", "Tenable", "tenable_sensor_devices", "Tenable sensors devices", [["uuid"], ["id"]])
+    def __init__(self, **kwargs):
+        super().__init__("tenable", "Tenable", "tenable_sensor_devices", "Tenable sensors devices", [["uuid"], ["id"]], **kwargs)
 
     def clean_csv(self):
         self.df = self.df.rename({"Agent Name": "device"})
@@ -221,14 +228,14 @@ class TenableSensorDevicesModule(DevicesModule):
         df.write_csv(self.csv_path)
 
 
-def get_module(name):
+def get_module(name, **kwargs):
     if name == "ad_devices":
-        return ADDevicesModule()
+        return ADDevicesModule(**kwargs)
     elif name == "intune_devices":
-        return IntuneDevicesModule()
+        return IntuneDevicesModule(**kwargs)
     elif name == "entra_devices":
-        return EntraDevicesModule()
+        return EntraDevicesModule(**kwargs)
     elif name == "endpoint_devices":
-        return EndpointDevicesModule()
+        return EndpointDevicesModule(**kwargs)
     elif name == "tenable_sensor_devices":
-        return TenableSensorDevicesModule()
+        return TenableSensorDevicesModule(**kwargs)

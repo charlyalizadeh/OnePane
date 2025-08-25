@@ -10,24 +10,19 @@
 
     <div class="panel" aria-describedby="helper">
         {% for module in modules %}
-        <label>
-            {{ module.display_name }}
-        </label>
-        <a 
-            class="btn {% if not module_activated[module.name] %}btn-success{% endif %}"
-            {% if module_activated[module.name] %}disabled{% endif %}
-            href="{{ url_for('set_module_state', module=module.name, state=1)}}"
-        >
-                Activated
-        </a>
-        <a
-            class="btn {% if module_activated[module.name] %}btn-danger{%endif %}"
-            {% if not module_activated[module.name] %}disabled{% endif %}
-            href="{{ url_for('set_module_state', module=module.name, state=0)}}"
-        >
-                Deactivated
-        </a>
-        <br/>
+            <label>
+                {{ module.display_name }}
+            </label>
+            {% if not all_modules[module.name] %}
+            <a class="btn btn-success" href="{{ url_for('set_module_state', module=module.name, state=1)}}">
+                Activate
+            </a>
+            {% else %}
+            <a class="btn btn-danger" href="{{ url_for('set_module_state', module=module.name, state=0)}}">
+                Deactivate
+            </a>
+            {% endif %}
+            <br/>
         {% endfor %}
     </div>
 </div>

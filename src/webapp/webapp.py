@@ -22,18 +22,44 @@ def get_validity_rules_safe(cur):
     except:
         return jsonify({'status': 'error', 'message': f'Error retriving validity rules'}), 500
 
+def get_category_rules_safe(cur):
+    try:
+        category_rules = db_get_category_rules_dict(cur)
+        return category_rules
+    except:
+        return jsonify({'status': 'error', 'message': f'Error retriving validity rules'}), 500
+
 def get_df_device_safe(cur, validity_rules):
     df_device = None
-    #try:
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
+    activated_modules = db_get_module(cur, [1])
+    if not activated_modules:
+        return pl.DataFrame()
+    modules = [get_module(name[0]) for name in activated_modules]
     category_rules = db_get_category_rules_dict(cur)
     validity_rules = db_get_validity_rules_dict(cur)
     df_device = join_devices_module(modules, category_rules, validity_rules)
-    #except:
-    #    return jsonify({'status': 'error', 'message': f'Error retriving all polars df from database'}), 500
     return df_device
+
+# Modules
+@app.route("/set_module_state/<module>/<state>")
+def set_module_state(module, state):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    db_set_module_state(cur, module, int(state))
+    con.commit()
+    con.close()
+    get_module(module, api=True)
+    return redirect(url_for("modules"))
+
+@app.route("/modules")
+def modules():
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    all_modules = {row[0]: row[1] for row in db_get_module(cur, [0, 1])}
+    modules = [get_module(key) for key in all_modules.keys()]
+    return render_template("modules.html", all_modules=all_modules, modules=modules)
 
 # Per tools
 @app.route("/update_devices/<tab_id>")
@@ -88,8 +114,41 @@ def split():
         colnames = ["device"] + colnames
         tables[i]["colnames"] = colnames
     con.close()
-    print(tables)
     return render_template("split.html", tables=tables)
+
+# Category rules
+@app.route("/update_category_rules", methods=['POST'])
+def update_category_rules():
+    data = request.get_json()
+    rules = data.get('rules', [])
+    rules = [(r["category"], r["regex"]) for r in rules]
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    db_update_category_rules(cur, rules)
+    con.commit()
+    return jsonify({'status': 'success'}), 200
+
+@app.route("/set_category_rule/<category>/<regex>")
+def set_category_rules():
+    data = request.get_json()
+    rules = data.get('rules', [])
+    rules = [(r["category"], r["regex"]) for r in rules]
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    db_update_category_rules(cur, rules)
+    con.commit()
+    return jsonify({'status': 'success'}), 200
+
+
+# Validity rules
+@app.route("/set_validity_rule/<category>/<tool>/<value>")
+def set_validity_rule(category, tool, value):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    execute_query_safe(cur, f"INSERT OR REPLACE INTO validity_rules VALUES(category, tool, value) VALUES ('{category}', '{tool}', {value})")
+    con.commit()
+    con.close()
+    return jsonify({'status': 'success'}), 200
 
 # All devices
 @app.route("/get_all_devices")
@@ -108,24 +167,17 @@ def merged():
     cur = con.cursor()
 
     validity_rules = get_validity_rules_safe(cur)
-    print(validity_rules)
+    category_rules = get_category_rules_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
 
     return render_template(
                "merged.html",
                colnames=df_device.columns,
                rows=df_device.rows(),
+               category_rules=category_rules,
                validity_rules=validity_rules
             )
 
-@app.route("/set_validity_rule/<category>/<tool>/<value>")
-def set_validity_rule(category, tool, value):
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    execute_query_safe(cur, f"UPDATE validity_rules SET value = {int(value)} WHERE category = '{category}' AND tool = '{tool}'")
-    con.commit()
-    con.close()
-    return jsonify({'status': 'success'}), 200
 
 # Event
 @app.route("/event_devices")
@@ -142,20 +194,3 @@ def event_devices():
                "events.html",
                events=rows
            )
-
-@app.route("/set_module_state/<module>/<state>")
-def set_module_state(module, state):
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    db_set_module_state(cur, module, int(state))
-    con.commit()
-    con.close()
-    return redirect(url_for("modules"))
-
-@app.route("/modules")
-def modules():
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    module_activated = {row[0]: row[1] for row in db_get_module(cur, [0, 1])}
-    modules = [get_module(key) for key in module_activated.keys()]
-    return render_template("modules.html", module_activated=module_activated, modules=modules)
