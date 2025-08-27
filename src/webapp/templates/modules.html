@@ -9,16 +9,16 @@
     </header>
 
     <div class="panel" aria-describedby="helper">
-        {% for module in modules %}
+        {% for module in all_modules %}
             <label>
                 {{ module.display_name }}
             </label>
-            {% if not all_modules[module.name] %}
-            <a class="btn btn-success" href="{{ url_for('set_module_state', module=module.name, state=1)}}">
+            {% if not module.is_activated() %}
+            <a class="btn btn-success" href="{{ url_for('set_module_state', module_name=module.name, state=1)}}">
                 Activate
             </a>
             {% else %}
-            <a class="btn btn-danger" href="{{ url_for('set_module_state', module=module.name, state=0)}}">
+            <a class="btn btn-danger" href="{{ url_for('set_module_state', module_name=module.name, state=0)}}">
                 Deactivate
             </a>
             {% endif %}

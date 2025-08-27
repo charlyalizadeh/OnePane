@@ -253,6 +253,11 @@ def db_is_table_empty(cur, table):
         return True
     return False
 
+def db_get_module_state(cur, module_name):
+    query = f"SELECT value FROM modules WHERE name = '{module_name}'"
+    cur.execute(query)
+    return cur.fetchone()[0]
+
 def db_device_exist_in(cur, device, module_names):
     subqueries = [f"EXISTS (SELECT 1 FROM {module_name} WHERE device = '{device}') AS in_{module_name}" for module_name in module_names]
     query = f"SELECT {','.join(subqueries)};"

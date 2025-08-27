@@ -3,18 +3,12 @@ param (
 )
 
 if($PSVersionTable.PSVersion.Major -eq 5) {
-    $csvStr = "Name,Enabled$([Environment]::NewLine)"
-    $computers = Get-ADComputer -Filter * | Select Name,Enabled,IPv4Address
-    $computers | % { 
-        $csvStr += "$($_.Name),$($_.Enabled)"
-        if($_ -ne $computers[-1]) {
-            $csvStr += [Environment]::NewLine
-        }
-    }
-    $csvStr | Out-File -FilePath $Out -Encoding ascii
+    Get-ADComputer -Filter * -Property * | ` 
+        Select-Object * | `
+        ConvertTo-Csv -NoTypeInformation -Delimiter ";" | `
+        ForEach-Object { $_ -replace '"','' } | `
+        Out-File -FilePath $Out -Encoding ASCII
 }
 else {
-    Get-ADComputer -Filter * | `
-        Select Name,Enabled,IP4Address | `
-        Export-Csv -Path $Out -UseQuotes Never
+    Get-ADComputer -Filter * -Property * | Export-Csv -Path $Out -UseQuotes Never -Delimiter ;
 }

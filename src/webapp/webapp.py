@@ -34,7 +34,7 @@ def get_df_device_safe(cur, validity_rules):
     df_device = None
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    activated_modules = get_activated_module()
+    activated_modules = get_activated_modules()
     category_rules = db_get_category_rules_dict(cur)
     validity_rules = db_get_validity_rules_dict(cur)
     con.close()
@@ -46,20 +46,20 @@ def get_df_device_safe(cur, validity_rules):
 
 
 # Modules
-@app.route("/set_module_state/<module>/<state>")
-def set_module_state(module, state):
+@app.route("/set_module_state/<module_name>/<state>")
+def set_module_state(module_name, state):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    db_set_module_state(cur, module, int(state))
+    db_set_module_state(cur, module_name, int(state))
     con.commit()
     con.close()
-    _ = get_module(module, update=True)
+    update_module(module_name)
     return redirect(url_for("modules"))
 
 @app.route("/modules")
 def modules():
     all_modules = get_all_modules()
-    return render_template("modules.html", all_modules=all_modules, modules=modules)
+    return render_template("modules.html", all_modules=all_modules)
 
 # By tools
 @app.route("/update_devices/<tab_id>")
@@ -68,7 +68,7 @@ def update_devices(tab_id):
     if tab_id == "devices":
         update_activated_modules()
     else:
-        _ = get_module(tab_id, True)
+        update_module(tab_id)
     return jsonify({'status': 'success'}), 200
     #except:
     #    return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500

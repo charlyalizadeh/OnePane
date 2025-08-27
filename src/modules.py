@@ -11,35 +11,21 @@ from connect.connect_microsoft_graph import get_graph_access_token
 
 
 class DevicesModule:
-    def __init__(self, source, display_source, name, display_name, unique_columns, update=False, **kwargs):
+    def __init__(self, source, display_source, name, display_name, unique_columns, csv_delimiter=",", **kwargs):
         self.object_category = "devices"
         self.source = source
         self.display_source = display_source
         self.name = name
         self.display_name = display_name
         self.unique_columns = unique_columns
+        self.csv_delimiter = csv_delimiter
         self.csv_path = PROJECT_PATH / f"data/{self.name}.csv"
-
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
-        if db_is_table_empty(cur, self.name):
-            if update:
-                self.update()
-            else:
-                try:
-                    self.df = self.load_data_from_csv()
-                except OSError as e:
-                    print(f"[{self.display_name}]: Couldn't load data ({e})")
-                    self.df = polars.DataFrame()
-        else:
-            self.load_data_from_db()
-        con.close()
 
         assert len(self.unique_columns[0]) == 1
 
     def load_data_from_csv(self):
         print(f"[{self.display_name}]: Loading data from CSV file ({self.csv_path})")
-        self.df = pl.read_csv(self.csv_path)
+        self.df = pl.read_csv(self.csv_path, separator=self.csv_delimiter)
 
     def load_data_from_db(self):
         print(f"[{self.display_name}]: Loading data from database")
@@ -63,7 +49,6 @@ class DevicesModule:
             print(f"[{self.display_name}]: API importation not implemented")
         self.load_data_from_csv()
         self.clean()
-
         con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         db_create_table_from_df(cur, self.df, self.name, self.unique_columns)
@@ -71,10 +56,17 @@ class DevicesModule:
         con.commit()
         con.close()
 
+    def is_activated(self):
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        is_activated = db_get_module_state(cur, self.name) == 1
+        con.close()
+        return is_activated
+
 
 class ADDevicesModule(DevicesModule):
     def __init__(self, **kwargs):
-        super().__init__("ad", "AD", "ad_devices", "AD devices", [["device"]], **kwargs)
+        super().__init__("ad", "AD", "ad_devices", "AD devices", [["device"]], ";", **kwargs)
 
     def clean(self):
         super().clean()
@@ -240,26 +232,31 @@ def get_module(name, **kwargs):
     elif name == "tenable_sensor_devices":
         return TenableSensorDevicesModule(**kwargs)
 
-def get_activated_modules(update=False, **kwargs):
+def get_activated_modules(**kwargs):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    activated_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[1])]
+    activated_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[1])]
     con.close()
     return activated_modules
 
-def get_deactivated_modules(update=False, **kwargs):
+def get_deactivated_modules(**kwargs):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    deactivated_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[0])]
+    deactivated_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[0])]
     con.close()
     return deactivated_modules
 
-def get_all_modules(update=False, **kwargs):
+def get_all_modules(**kwargs):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    all_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[0, 1])]
+    all_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[0, 1])]
     con.close()
     return all_modules
 
 def update_activated_modules():
-    _ = get_activated_module(update=True)
+    for module in get_activated_module():
+        module.update()
+
+def update_module(name):
+    module = get_module(name)
+    module.update()

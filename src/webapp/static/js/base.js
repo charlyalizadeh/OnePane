@@ -67,6 +67,8 @@ function updateTabDevices(rows, tabId) {
             fixedColumns: { start: 2 },
             colResize: { isEnabled: true },
             createdRow: function (row, data, dataIndex) {
+                var device_td = row.querySelectorAll("td")[1]
+                device_td.innerHTML = `<a href="/device/${device_td.innerText}">${device_td.innerText}</a>`
                 if(tabId != "devices") { return }
                 const columns = getTableColumns(`${tabId}-table`)
                 if(!(columns.includes("Validity"))) { return }
