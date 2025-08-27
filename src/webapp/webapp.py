@@ -198,6 +198,7 @@ def merged():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
+    activated_modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
     validity_rules = get_validity_rules_safe(cur)
     category_rules = get_category_rules_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
@@ -208,7 +209,8 @@ def merged():
                colnames=df_device.columns,
                rows=df_device.rows(),
                category_rules=category_rules,
-               validity_rules=validity_rules
+               validity_rules=validity_rules,
+               activated_modules=activated_modules
             )
 
 

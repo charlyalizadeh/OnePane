@@ -37,7 +37,6 @@ function commitCategoryRules() {
     .then(response => response.json())
     .then()
     .then(error => console.error('Error:', error))
-
 }
 
 // Validity rules

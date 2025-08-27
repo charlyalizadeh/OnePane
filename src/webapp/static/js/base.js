@@ -28,6 +28,12 @@ function setBtnStateFailure(btn, btnText, error) {
 }
 
 // DataTables data update
+function getTableColumns(tabId) {
+    const th = document.querySelectorAll(`#${tabId} thead tr th`)
+    var columns = []
+    th.forEach(t => columns.push(t.innerText))
+    return columns
+}
 function updateTab(rows, tabId) {
     const trueDisplay = '<span style="color: green">✔</span>'
     const falseDisplay = '' //'<span style="color: red">✘</span>'
@@ -36,9 +42,7 @@ function updateTab(rows, tabId) {
     // Get the DataTable
     if(!$.fn.DataTable.isDataTable(table)) {
         dt = $(table).DataTable({
-            layout: {
-                topStart: ['pageLength', 'buttons']
-            },
+            layout: { topStart: ['pageLength', 'buttons'] },
             buttons: ['colvis'],
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             pageLength: 50,
@@ -47,8 +51,9 @@ function updateTab(rows, tabId) {
             colResize: { isEnabled: true },
             createdRow: function (row, data, dataIndex) {
                 if(tabId != "devices") { return }
-                if(!("valid" in data)) { return }
-                const isValid = data.validity == trueDisplay
+                const columns = getTableColumns(`${tabId}-table`)
+                if(!(columns.includes("Validity"))) { return }
+                const isValid = data[columns.indexOf("Validity")] == trueDisplay
                 if (isValid) {
                     $(row).addClass('row-valid')
                 } else {

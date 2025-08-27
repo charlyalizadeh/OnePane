@@ -168,6 +168,9 @@ def db_update_category_rules(cur, rules):
     query = f"DELETE FROM category_rules WHERE category NOT IN ({','.join(pk)})"
     cur.execute(query)
 
+    # Update validity rules
+    db_update_validity_rules_from_category_rules(cur)
+
 def db_set_category_rule(cur, category, regex):
     query = f"INSERT OR REPLACE INTO category_rules VALUES ('{category}', '{regex}')"
     cur.execute(query)
@@ -186,6 +189,17 @@ def db_update_validity_rules(cur, rules):
 def db_set_validity_rule(cur, category, module, value):
     query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module}', {value})"
     cur.execute(query)
+
+def db_update_validity_rules_from_category_rules(cur):
+    category_rules = db_get_category_rules_dict(cur)
+    validity_rules = db_get_validity_rules_dict(cur)
+    activated_modules = db_get_module(cur, value=[1])
+    for category in category_rules.keys():
+        for module in activated_modules:
+            module_name = module[0]
+            if category not in validity_rules.keys() or module_name not in validity_rules[category].keys():
+                print(f"Adding {category}, {module_name} = 2")
+                db_set_validity_rule(cur, category, module_name, 2)
 
 
 # Retrieve data
