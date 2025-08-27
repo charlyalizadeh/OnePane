@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <h2 class="mb-3">Events</h2>
     <div class="table-responsive">
-        <table id="event_table" class="table table-bordered table-striped text-center align-middle">
+        <table id="events_table" class="table table-bordered table-striped text-center align-middle">
             <thead>
                 <tr>
                     <th>#</th>
@@ -35,26 +35,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
-    $('#event_table').DataTable({
-        layout: {
-            topStart: ['pageLength', 'buttons']
-        },
-        buttons: ['colvis'],
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-        pageLength: 50,
-        scrollX: true,
-        fixedColumns: { start: 2 },
-        headerCallback: function(thead) {
-            $(thead).find('th').css({
-                'background-color': '#3b82f6',
-                'color': '#ffffff',
-                'border-bottom': 'none',
-                'padding': '0.75rem 1rem',
-                'text-align': 'left',
-                'font-weight': '600',
-                'border-radius': '0.5rem 0.5rem 0 0'
-            });
-        }
+    $(document).ready(function() {
+        setupDataTable_Events('#events_table')
     })
 </script>
 {% endblock %}

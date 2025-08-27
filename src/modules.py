@@ -11,7 +11,7 @@ from connect.connect_microsoft_graph import get_graph_access_token
 
 
 class DevicesModule:
-    def __init__(self, source, display_source, name, display_name, unique_columns, api=False, **kwargs):
+    def __init__(self, source, display_source, name, display_name, unique_columns, update=False, **kwargs):
         self.object_category = "devices"
         self.source = source
         self.display_source = display_source
@@ -23,7 +23,7 @@ class DevicesModule:
         con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         if db_is_table_empty(cur, self.name):
-            if api:
+            if update:
                 self.update()
             else:
                 try:
@@ -239,3 +239,27 @@ def get_module(name, **kwargs):
         return EndpointDevicesModule(**kwargs)
     elif name == "tenable_sensor_devices":
         return TenableSensorDevicesModule(**kwargs)
+
+def get_activated_modules(update=False, **kwargs):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    activated_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[1])]
+    con.close()
+    return activated_modules
+
+def get_deactivated_modules(update=False, **kwargs):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    deactivated_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[0])]
+    con.close()
+    return deactivated_modules
+
+def get_all_modules(update=False, **kwargs):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    all_modules = [get_module(row[0], update=update, **kwargs) for row in db_get_modules(cur, value=[0, 1])]
+    con.close()
+    return all_modules
+
+def update_activated_modules():
+    _ = get_activated_module(update=True)

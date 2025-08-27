@@ -186,19 +186,17 @@ def db_update_validity_rules(cur, rules):
     query = f"DELETE FROM validity_rules WHERE (category, module) NOT IN ({','.join(pk)})"
     cur.execute(query)
 
-def db_set_validity_rule(cur, category, module, value):
-    query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module}', {value})"
+def db_set_validity_rule(cur, category, module_name, value):
+    query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module_name}', {value})"
     cur.execute(query)
 
-def db_update_validity_rules_from_category_rules(cur):
+def db_update_validity_rules_from_category_rules(cur, module_names):
     category_rules = db_get_category_rules_dict(cur)
     validity_rules = db_get_validity_rules_dict(cur)
-    activated_modules = db_get_module(cur, value=[1])
     for category in category_rules.keys():
-        for module in activated_modules:
-            module_name = module[0]
+        for module_name in module_names:
             if category not in validity_rules.keys() or module_name not in validity_rules[category].keys():
-                print(f"Adding {category}, {module_name} = 2")
+                print(f"Adding {category}, {module.name} = 2")
                 db_set_validity_rule(cur, category, module_name, 2)
 
 
@@ -231,7 +229,7 @@ def db_get_validity_rules_dict(cur):
         validity_rules[row[0]][row[1]] = row[2]
     return validity_rules
 
-def db_get_module(cur, value=[0, 1]):
+def db_get_modules(cur, value=[0, 1]):
     value = map(str, value)
     query = f"SELECT * FROM modules WHERE value in ({','.join(value)})"
     cur.execute(query)
@@ -254,3 +252,13 @@ def db_is_table_empty(cur, table):
     if not cur.fetchall():
         return True
     return False
+
+def db_device_exist_in(cur, device, module_names):
+    subqueries = [f"EXISTS (SELECT 1 FROM {module_name} WHERE device = '{device}') AS in_{module_name}" for module_name in module_names]
+    query = f"SELECT {','.join(subqueries)};"
+    cur.execute(query)
+    device_exist_in = {module_name: is_in for module_name, is_in in zip(module_names, cur.fetchall()[0])}
+    return device_exist_in
+
+def db_get_serial_number(cur, device, module_names):
+    pass

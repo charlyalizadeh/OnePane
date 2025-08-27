@@ -27,7 +27,7 @@
          id="{{ table['name'] }}" 
          role="tabpanel" 
          aria-labelledby="{{ table['name'] }}-tab">
-        <button id="refresh-{{ table['name'] }}" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('{{ table['name'] }}', true)">
+        <button id="refresh-{{ table['name'] }}" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTabDevices('{{ table['name'] }}', true)">
             <span id="refresh-{{ table['name'] }}-text"><i class="bi bi-arrow-clockwise"></i></span>
         </button>
         <div style="max-width: 1300px; overflow-x: auto; overflow-y: hidden; border: 1px solid #ccc; padding: 10px;">
@@ -53,7 +53,7 @@
 <script>
     $(document).ready(function() {
         {% for table in tables %}
-        refreshTab("{{ table['name'] }}", false)
+        refreshTabDevices("{{ table['name'] }}", false)
         {% endfor %}
     });
 </script>

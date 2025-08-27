@@ -2,7 +2,7 @@ from flask import Flask, render_template, make_response, jsonify, redirect, url_
 import sqlite3
 
 from config import DB_PATH
-from db import db_get_validity_rules_dict, db_get_module, db_set_module_state
+from db import db_get_validity_rules_dict, db_get_modules, db_set_module_state
 from modules import *
 
 
@@ -34,28 +34,15 @@ def get_df_device_safe(cur, validity_rules):
     df_device = None
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    activated_modules = db_get_module(cur, [1])
-    if not activated_modules:
-        return pl.DataFrame()
-    modules = [get_module(name[0]) for name in activated_modules]
+    activated_modules = get_activated_module()
     category_rules = db_get_category_rules_dict(cur)
     validity_rules = db_get_validity_rules_dict(cur)
     con.close()
-    df_device = join_devices_module(modules, category_rules, validity_rules)
+    df_device = join_devices_module(activated_modules, category_rules, validity_rules)
     #except:
     #    return jsonify({'status': 'error', 'message': f'Error retrieving all the devices'}), 500
     return df_device
 
-def update_activated_modules():
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    activated_modules = [row[0] for row in db_get_module(cur, [1])]
-    con.close()
-    if not activated_modules:
-        return None
-    for module_name in activated_modules:
-        module = get_module(module_name)
-        module.update()
 
 
 # Modules
@@ -66,16 +53,12 @@ def set_module_state(module, state):
     db_set_module_state(cur, module, int(state))
     con.commit()
     con.close()
-    get_module(module, api=True)
+    _ = get_module(module, update=True)
     return redirect(url_for("modules"))
 
 @app.route("/modules")
 def modules():
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    all_modules = {row[0]: row[1] for row in db_get_module(cur, [0, 1])}
-    modules = [get_module(key) for key in all_modules.keys()]
-    con.close()
+    all_modules = get_all_modules()
     return render_template("modules.html", all_modules=all_modules, modules=modules)
 
 # By tools
@@ -85,8 +68,7 @@ def update_devices(tab_id):
     if tab_id == "devices":
         update_activated_modules()
     else:
-        module = get_module(tab_id)
-        module.update()
+        _ = get_module(tab_id, True)
     return jsonify({'status': 'success'}), 200
     #except:
     #    return jsonify({'status': 'error', 'message': f'Error calling the {tab_id} API'}), 500
@@ -121,11 +103,11 @@ def get_devices(table_id):
 def split():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
+    activated_modules = get_activated_modules()
     tables = [{
         "name": module.name,
         "display_name": module.display_name
-    } for module in modules]
+    } for module in activated_modules]
     for i, table in enumerate(tables):
         execute_query_safe(cur, f"SELECT name FROM pragma_table_info('{table['name']}')")
         colnames = [r[0] for r in cur.fetchall()]
@@ -198,7 +180,7 @@ def merged():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
-    activated_modules = [get_module(name[0]) for name in db_get_module(cur, [1])]
+    activated_modules = get_activated_modules()
     validity_rules = get_validity_rules_safe(cur)
     category_rules = get_category_rules_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
@@ -212,7 +194,6 @@ def merged():
                validity_rules=validity_rules,
                activated_modules=activated_modules
             )
-
 
 # Event
 @app.route("/event_devices")
@@ -228,4 +209,21 @@ def event_devices():
     return render_template(
                "events.html",
                events=rows
+           )
+
+# Single device
+@app.route("/device/<name>")
+def device(name):
+    name = name.lower()
+    activated_modules = get_activated_modules()
+    activated_modules_dict = {module.name: module for module in activated_modules}
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    device_exist_in = db_device_exist_in(cur, name, activated_modules_dict.keys())
+    con.close()
+    return render_template(
+               "device.html",
+               name=name,
+               device_exist_in=device_exist_in,
+               activated_modules_dict=activated_modules_dict
            )

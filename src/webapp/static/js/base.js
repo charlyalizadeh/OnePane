@@ -28,15 +28,32 @@ function setBtnStateFailure(btn, btnText, error) {
 }
 
 // DataTables data update
+// Common DataTables utilities
 function getTableColumns(tabId) {
     const th = document.querySelectorAll(`#${tabId} thead tr th`)
     var columns = []
     th.forEach(t => columns.push(t.innerText))
     return columns
 }
-function updateTab(rows, tabId) {
+function formatRow(row, index, add_index=true, bool_to_unicode=true) {
     const trueDisplay = '<span style="color: green">✔</span>'
-    const falseDisplay = '' //'<span style="color: red">✘</span>'
+    const falseDisplay = ''
+    var rowData = add_index ? [index + 1, ...Object.values(row)]: [...Object.values(row)]
+    if(bool_to_unicode) {
+        for(let i = 1; i < rowData.length; i++) {
+            if(rowData[i] == true)
+                rowData[i] = trueDisplay
+            if(rowData[i] == false)
+                rowData[i] = falseDisplay
+        }
+    }
+    return rowData
+}
+
+// DataTables: devices table
+function updateTabDevices(rows, tabId) {
+    const trueDisplay = '<span style="color: green">✔</span>'
+    const falseDisplay = ''
     const table = `#${tabId}-table`
     let dt
     // Get the DataTable
@@ -79,18 +96,12 @@ function updateTab(rows, tabId) {
     }
     // Setup the data
     rows.forEach((row, index) => {
-        const rowData = [index + 1, ...Object.values(row)]
-        for(let i = 1; i < rowData.length; i++) {
-            if(rowData[i] == true)
-                rowData[i] = trueDisplay
-            if(rowData[i] == false)
-                rowData[i] = falseDisplay
-        }
-        dt.row.add(rowData)
+        row = formatRow(row, index, true, true)
+        dt.row.add(row)
     })
     dt.draw()
 }
-function refreshTab(tabId, update) {
+function refreshTabDevices(tabId, update) {
     const btn = document.getElementById(`refresh-${tabId}`)
     const btnText = document.getElementById(`refresh-${tabId}-text`)
 
@@ -101,10 +112,59 @@ function refreshTab(tabId, update) {
     fetch(`/get_devices/${tabId}`)
         .then(response => response.json())
         .then(data => {
-            updateTab(data['rows'], tabId)
+            updateTabDevices(data['rows'], tabId)
             setBtnStateSuccess(btn, btnText)
         })
         .catch(error => {
             setBtnStateFailure(btn, btnText, error)
         })
+}
+
+// DataTables: event table
+function setupDataTable_Events(tabId) {
+    $(tabId).DataTable({
+        layout: {
+            topStart: ['pageLength', 'buttons']
+        },
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        pageLength: 100,
+        order: [[4, 'desc']],
+        headerCallback: function(thead) {
+            $(thead).find('th').css({
+                'background-color': '#3b82f6',
+                'color': '#ffffff',
+                'border-bottom': 'none',
+                'padding': '0.75rem 1rem',
+                'text-align': 'left',
+                'font-weight': '600',
+                'border-radius': '0.5rem 0.5rem 0 0'
+            })
+        }
+    })
+}
+
+// DataTables: single device table
+function setupDataTable_SingleDevice(tabId) {
+    $(tabId).DataTable({
+        layout: {},
+        paging: false,
+        order: [[4, 'desc']],
+        headerCallback: function(thead) {
+            $(thead).find('th').css({
+                'background-color': '#3b82f6',
+                'color': '#ffffff',
+                'border-bottom': 'none',
+                'padding': '0.75rem 1rem',
+                'text-align': 'left',
+                'font-weight': '600',
+                'border-radius': '0.5rem 0.5rem 0 0'
+            })
+        },
+        createdRow: function(row, data, dataIndex) {
+            const rowFormatted = formatRow(data, dataIndex, false, true)
+            row.querySelectorAll("td").forEach(function(td, index) {
+                td.innerHTML = rowFormatted[index];
+            })
+        }
+    })
 }

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{{ name }}</h2>
+    <div class="table-responsive">
+        <table id="{{ name }}_module_table" class="table table-bordered table-striped text-center align-middle">
+            <thead>
+                <tr>
+                    <th>Module</th>
+                    <th>{{name}} is in</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, val in device_exist_in.items() %}
+                <tr>
+                    <td>{{ activated_modules_dict[key].display_name }}</td>
+                    <td>{{ val }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        setupDataTable_SingleDevice('#{{name}}_module_table')
+    })
+</script>
+{% endblock %}

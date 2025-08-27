@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1> All devices </h1>
-<button id="refresh-devices" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTab('devices', true)">
+<button id="refresh-devices" type="button" class="btn btn-sm btn-outline-primary" title="Refresh" onclick="refreshTabDevices('devices', true)">
     <span id="refresh-devices-text"><i class="bi bi-arrow-clockwise"></i></span>
 </button>
 
@@ -125,7 +125,7 @@
 <script>
     $(document).ready(function() {
         // DataTables
-        refreshTab('devices', false)
+        refreshTabDevices('devices', false)
 
         // Input display
         document.querySelectorAll('.three-state').forEach((checkbox) => {
