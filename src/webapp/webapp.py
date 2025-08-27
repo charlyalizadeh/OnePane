@@ -183,8 +183,11 @@ def merged():
     cur = con.cursor()
 
     activated_modules = get_activated_modules()
-    validity_rules = get_validity_rules_safe(cur)
+    for module in activated_modules:
+        module.load_data_from_db()
     category_rules = get_category_rules_safe(cur)
+    print(category_rules)
+    validity_rules = get_validity_rules_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
 
     con.close()

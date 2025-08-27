@@ -169,7 +169,8 @@ def db_update_category_rules(cur, rules):
     cur.execute(query)
 
     # Update validity rules
-    db_update_validity_rules_from_category_rules(cur)
+    activated_module_names = [row[0] for row in db_get_modules(cur, [1])]
+    db_update_validity_rules_from_category_rules(cur, activated_module_names)
 
 def db_set_category_rule(cur, category, regex):
     query = f"INSERT OR REPLACE INTO category_rules VALUES ('{category}', '{regex}')"
@@ -196,7 +197,7 @@ def db_update_validity_rules_from_category_rules(cur, module_names):
     for category in category_rules.keys():
         for module_name in module_names:
             if category not in validity_rules.keys() or module_name not in validity_rules[category].keys():
-                print(f"Adding {category}, {module.name} = 2")
+                print(f"Adding {category}, {module_name} = 2")
                 db_set_validity_rule(cur, category, module_name, 2)
 
 

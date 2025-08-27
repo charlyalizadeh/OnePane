@@ -58,9 +58,9 @@ class DevicesModule:
     def is_activated(self):
         con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
-        is_activated = db_get_module_state(cur, self.name) == 1
+        _is_activated = db_get_module_state(cur, self.name) == 1
         con.close()
-        return is_activated
+        return _is_activated
 
 
 class ADDevicesModule(DevicesModule):
@@ -257,7 +257,7 @@ def get_all_modules(**kwargs):
     return all_modules
 
 def update_activated_modules():
-    for module in get_activated_module():
+    for module in get_activated_modules():
         module.update()
 
 def update_module(name):
