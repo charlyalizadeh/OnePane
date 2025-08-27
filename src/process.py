@@ -9,8 +9,8 @@ def add_prefix_column_names(df, prefix, exclude=[]):
 
 def join_devices_module(modules, category_rules, validity_rules):
     # Requires at least 2 modules
-    if len(modules) < 2:
-        return None
+    if len(modules) == 0:
+        return pl.DataFrame()
 
     # Add prefix
     dfs = {}
