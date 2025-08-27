@@ -165,7 +165,13 @@ class EndpointDevicesModule(DevicesModule):
 
     def clean(self):
         super().clean()
-        self.df = self.df.rename({"Computer Name": "device"})
+        print(self.df.columns)
+        self.df = self.df.rename({
+            "Computer Name": "device",
+            "Serial Number": "Endpoint Product Id",
+            "Service Tag/Serial Number": "Serial Number"
+        })
+        print(self.df.columns)
         self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
         self.df = self.df.with_columns(

@@ -235,7 +235,12 @@ def db_get_modules(cur, value=[0, 1]):
     cur.execute(query)
     return cur.fetchall()
 
-def db_get_table_col_type(cur, table, table_col):
+def db_get_table_col_names(cur, table):
+    query = f"SELECT name FROM pragma_table_info('{table}');"
+    cur.execute(query)
+    return [row[0] for row in cur.fetchall()]
+
+def db_get_table_col_types(cur, table, table_col):
     query = f"SELECT type FROM pragma_table_info('{table}') WHERE name = '{table_col}';"
     cur.execute(query)
     return cur.fetchone()[0]
@@ -265,5 +270,14 @@ def db_device_exist_in(cur, device, module_names):
     device_exist_in = {module_name: is_in for module_name, is_in in zip(module_names, cur.fetchall()[0])}
     return device_exist_in
 
-def db_get_serial_number(cur, device, module_names):
-    pass
+def db_get_device_serial_numbers(cur, device, module_names):
+    device_serial_numbers = {}
+    for module_name in module_names:
+        table_col_names = db_get_table_col_names(cur, module_name)
+        if "serial_number" not in table_col_names:
+            device_serial_numbers[module_name] = []
+        else:
+            query = f"SELECT serial_number FROM {module_name} WHERE device = '{device}'"
+            cur.execute(query)
+            device_serial_numbers[module_name] = [row[0] for row in cur.fetchall()]
+    return device_serial_numbers

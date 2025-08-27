@@ -220,10 +220,12 @@ def device(name):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     device_exist_in = db_device_exist_in(cur, name, activated_modules_dict.keys())
+    device_serial_numbers = db_get_device_serial_numbers(cur, name, activated_modules_dict.keys())
     con.close()
     return render_template(
                "device.html",
                name=name,
                device_exist_in=device_exist_in,
+               device_serial_numbers=device_serial_numbers,
                activated_modules_dict=activated_modules_dict
            )
