@@ -206,7 +206,7 @@ def db_get_df_from_table(cur, table, prefix=""):
     cur.execute(query)
     rows = cur.fetchall()
     colnames = [f"{prefix}{desc[0]}" for desc in cur.description]
-    df = pl.from_records(rows, schema=colnames, orient="row")
+    df = pl.from_records(rows, schema=colnames, orient="row",  infer_schema_length=500)
     return df
 
 def db_get_category_rules_dict(cur):
