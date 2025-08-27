@@ -35,6 +35,8 @@ def get_df_device_safe(cur, validity_rules):
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     activated_modules = get_activated_modules()
+    for module in activated_modules:
+        module.load_data_from_db()
     category_rules = db_get_category_rules_dict(cur)
     validity_rules = db_get_validity_rules_dict(cur)
     con.close()
