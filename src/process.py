@@ -28,12 +28,13 @@ def join_devices_module(modules, category_rules, validity_rules):
     
     # Add category
     if category_rules:
-        df_device = df_device.with_columns((pl.col("device").map_elements(get_device_category, return_dtype=pl.datatypes.String)).alias("category"))
+        func = lambda row: get_device_category(row, category_rules)
+        df_device = df_device.with_columns((pl.col("device").map_elements(func, return_dtype=pl.datatypes.String)).alias("category"))
 
     # Add validity column
     if category_rules and validity_rules:
-        func1 = lambda row: check_device_validity(row, validity_rules)
-        df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func1, return_dtype=pl.datatypes.Int8).alias("validity"))
+        func = lambda row: check_device_validity(row, validity_rules)
+        df_device = df_device.with_columns(pl.struct(pl.all()).map_elements(func, return_dtype=pl.datatypes.Int8).alias("validity"))
 
     first_cols = ["device"] 
     if category_rules:

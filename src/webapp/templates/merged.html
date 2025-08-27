@@ -23,7 +23,6 @@
                             <th>Category</th>
                             <th>Regex</th>
                             <th></th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,6 +123,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/merged.js') }}"></script>
 <script>
     $(document).ready(function() {
         // DataTables
@@ -131,32 +131,14 @@
 
         // Input display
         document.querySelectorAll('.three-state').forEach((checkbox) => {
-            updateVisual(checkbox)
+            validityRulesUpdateVisual(checkbox)
             checkbox.addEventListener('click', (e) => {
                 e.preventDefault();
                 checkbox.dataset.state = (checkbox.dataset.state + 1) % 3;
-                updateVisual(checkbox)
+                validityRulesUpdateVisual(checkbox)
                 validityRulesChange(checkbox)
             });
         })
     })
-    function updateVisual(checkbox) {
-        checkbox.checked = checkbox.dataset.state == "1";
-        checkbox.indeterminate = checkbox.dataset.state == "2";
-        checkbox.classList.remove('state-indeterminate', 'state-checked', 'state-unchecked')
-        if(checkbox.checked) {
-            checkbox.classList.add('state-checked')
-        }
-        else if(checkbox.indeterminate) {
-            checkbox.classList.add('state-indeterminate')
-        }
-        else {
-            checkbox.classList.add('state-unchecked')
-        }
-    }
-    function validityRulesChange(input) {
-        validityRulesEdit(input);
-        refreshTab('devices', false) // TODO: overkill, should only reload the validity data
-    }
 </script>
 {% endblock %}

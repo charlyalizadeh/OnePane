@@ -152,7 +152,7 @@ def db_update_table_from_df(cur, df, table, col):
     db_fill_table_from_df(cur, df, table)
     if not not_in_df:
         return
-    if get_table_col_type(cur, table, col) == 'TEXT':
+    if db_get_table_col_type(cur, table, col) == 'TEXT':
         not_in_df = [f"'{val[0]}'" for val in not_in_df]
     query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
     cur.execute(query)
@@ -164,7 +164,7 @@ def db_update_category_rules(cur, rules):
     cur.executemany(query, rules)
 
     # Delete rules not present in `rules`
-    pk = [rule[0] for rule in rules]
+    pk = [f"'{rule[0]}'" for rule in rules]
     query = f"DELETE FROM category_rules WHERE category NOT IN ({','.join(pk)})"
     cur.execute(query)
 
@@ -183,7 +183,7 @@ def db_update_validity_rules(cur, rules):
     query = f"DELETE FROM validity_rules WHERE (category, module) NOT IN ({','.join(pk)})"
     cur.execute(query)
 
-def db_set_validity_rules(cur, category, module, value):
+def db_set_validity_rule(cur, category, module, value):
     query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module}', {value})"
     cur.execute(query)
 
