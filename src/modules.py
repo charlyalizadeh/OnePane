@@ -20,7 +20,6 @@ class DevicesModule:
         self.unique_columns = unique_columns
         self.csv_delimiter = csv_delimiter
         self.csv_path = PROJECT_PATH / f"data/{self.name}.csv"
-
         assert len(self.unique_columns[0]) == 1
 
     def load_data_from_csv(self):
@@ -165,13 +164,11 @@ class EndpointDevicesModule(DevicesModule):
 
     def clean(self):
         super().clean()
-        print(self.df.columns)
         self.df = self.df.rename({
             "Computer Name": "device",
             "Serial Number": "Endpoint Product Id",
             "Service Tag/Serial Number": "Serial Number"
         })
-        print(self.df.columns)
         self.df = set_column_names_space(self.df)
         self.df = self.df.with_columns(pl.col("device").str.to_lowercase().alias("device"))
         self.df = self.df.with_columns(
