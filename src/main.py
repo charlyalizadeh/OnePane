@@ -11,8 +11,7 @@ if __name__ == "__main__":
 
     print("Connecting to the sqlite database.")
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
+    cur = DB_CON.cursor()
 
     db_create_table_event(cur)
     db_create_table_category_rules(cur)
@@ -27,9 +26,9 @@ if __name__ == "__main__":
             "tenable_sensor_devices"
         ])
 
-    print("Commit and close connection.")
-    con.commit()
-    con.close()
+    print("Committing to the database.")
+    DB_CON.commit()
+    cur.close()
 
     print("Running the Flask App")
     app.run(debug=True)

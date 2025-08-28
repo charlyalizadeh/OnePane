@@ -28,10 +28,8 @@ class DevicesModule:
 
     def load_data_from_db(self):
         print(f"[{self.display_name}]: Loading data from database")
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
+        cur = DB_CON.cursor()
         self.df = db_get_df_from_table(cur, self.name)
-        con.close()
 
     def clean(self):
         print(f"[{self.display_name}]: Cleaning")
@@ -48,18 +46,16 @@ class DevicesModule:
             print(f"[{self.display_name}]: API importation not implemented")
         self.load_data_from_csv()
         self.clean()
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
+        cur = DB_CON.cursor()
         db_create_table_from_df(cur, self.df, self.name, self.unique_columns)
         db_update_table_from_df(cur, self.df, self.name, self.unique_columns[0][0])
-        con.commit()
-        con.close()
+        DB_CON.commit()
+        cur.close()
 
     def is_activated(self):
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
+        cur = DB_CON.cursor()
         _is_activated = db_get_module_state(cur, self.name) == 1
-        con.close()
+        cur.close()
         return _is_activated
 
 
@@ -76,7 +72,7 @@ class ADDevicesModule(DevicesModule):
     def api_to_csv(self):
         super().api_to_csv()
         powershell_path = Path("C:\\ProgramFiles\\PowerShell\\7\\pwsh.exe")
-        # If Powershell 7 is not installed we use Windows Powershell 5 (tho it's not the same software)
+        # If Powershell 7 is not installed we use Windows Powershell 5
         if not powershell_path.is_file():
             powershell_path = Path('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe')
         subprocess.call(
@@ -236,24 +232,21 @@ def get_module(name, **kwargs):
         return TenableSensorDevicesModule(**kwargs)
 
 def get_activated_modules(**kwargs):
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
+    cur = DB_CON.cursor()
     activated_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[1])]
-    con.close()
+    cur.close()
     return activated_modules
 
 def get_deactivated_modules(**kwargs):
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
+    cur = DB_CON.cursor()
     deactivated_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[0])]
-    con.close()
+    cur.close()
     return deactivated_modules
 
 def get_all_modules(**kwargs):
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
+    cur = DB_CON.cursor()
     all_modules = [get_module(row[0], **kwargs) for row in db_get_modules(cur, value=[0, 1])]
-    con.close()
+    cur.close()
     return all_modules
 
 def update_activated_modules():
