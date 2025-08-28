@@ -148,6 +148,23 @@ def del_category_rule(category):
     cur.close()
     return jsonify({'status': 'success'}), 200
 
+@app.route("/get_category_rules_dict/")
+def get_category_rules_dict():
+    cur = DB_CON.cursor()
+
+    activated_modules = [
+        {
+            "name": module.name,
+            "display_name": module.display_name
+        } for module in get_activated_modules()
+    ]
+    category_rules = db_get_category_rules_dict(cur)
+    if category_rules:
+        category_rules = None
+
+    cur.close()
+    return jsonify({'rules': category_rules, 'activated_modules': activated_modules}), 200
+
 # Validity rules
 @app.route("/update_validity_rules", methods=['POST'])
 def update_validity_rules():
