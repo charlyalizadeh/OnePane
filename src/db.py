@@ -1,5 +1,4 @@
 from datetime import datetime
-import config
 import keyword
 import polars as pl
 import re
@@ -99,9 +98,7 @@ def db_create_table_event(cur):
     """)
 
 
-# Insert/Update data
-
-## Modules
+# Modules
 def db_fill_modules(cur, modules):
     modules = [(m, 0) for m in modules]
     insert_query = f"INSERT OR IGNORE INTO modules VALUES (?, ?)"
@@ -111,7 +108,22 @@ def db_set_module_state(cur, module, state):
     query = f"UPDATE modules SET value = {state} WHERE name = '{module}'"
     cur.execute(query)
 
-## Events
+    # Update the validity rules
+    activated_module_names = [row[0] for row in db_get_modules(cur, [1])]
+    db_update_validity_rules_from_db(cur, activated_module_names)
+
+def db_get_modules(cur, value=[0, 1]):
+    value = map(str, value)
+    query = f"SELECT * FROM modules WHERE value in ({','.join(value)})"
+    cur.execute(query)
+    return cur.fetchall()
+
+def db_get_module_state(cur, module_name):
+    query = f"SELECT value FROM modules WHERE name = '{module_name}'"
+    cur.execute(query)
+    return cur.fetchone()[0]
+
+# Events
 #TODO: not the most efficient, but for max 100 rows it doesn't matter
 def db_insert_added_event(cur, df, table, col):
     query = f"SELECT {col}, device FROM {table}"
@@ -140,7 +152,7 @@ def db_insert_deleted_event(cur, df, table, col):
             not_in_df.append(row)
     return not_in_df
 
-## Dataframe
+# Dataframe
 def db_fill_table_from_df(cur, df, table):
     placeholders = ', '.join(["?"] * df.width)
     insert_query = f"INSERT OR REPLACE INTO {table} VALUES ({placeholders})"
@@ -157,7 +169,7 @@ def db_update_table_from_df(cur, df, table, col):
     query = f"DELETE FROM {table} WHERE {col} IN ({','.join(not_in_df)})"
     cur.execute(query)
 
-## Category rules
+# Category rules
 def db_update_category_rules(cur, rules):
     # Update and add new rules
     query = "INSERT OR REPLACE INTO category_rules VALUES (?, ?)"
@@ -170,13 +182,27 @@ def db_update_category_rules(cur, rules):
 
     # Update validity rules
     activated_module_names = [row[0] for row in db_get_modules(cur, [1])]
-    db_update_validity_rules_from_category_rules(cur, activated_module_names)
+    db_update_validity_rules_from_db(cur, activated_module_names)
 
 def db_set_category_rule(cur, category, regex):
     query = f"INSERT OR REPLACE INTO category_rules VALUES ('{category}', '{regex}')"
     cur.execute(query)
 
-## Validity rules
+    # Update validity rules
+    activated_module_names = [row[0] for row in db_get_modules(cur, [1])]
+    db_update_validity_rules_from_db(cur, activated_module_names)
+
+def db_del_category_rule(cur, category):
+    query = f"DELETE FROM category_rules WHERE category = '{category}'"
+    cur.execute(query)
+
+def db_get_category_rules_dict(cur):
+    query = "SELECT category, regex FROM category_rules"
+    cur.execute(query)
+    category_rules = {k:v for k, v in cur.fetchall()}
+    return category_rules
+
+# Validity rules
 def db_update_validity_rules(cur, rules):
     # Update and add new rules
     query = "INSERT INTO validity_rules VALUES (?, ?, ?)"
@@ -191,34 +217,7 @@ def db_set_validity_rule(cur, category, module_name, value):
     query = f"INSERT OR REPLACE INTO validity_rules VALUES ('{category}', '{module_name}', {value})"
     cur.execute(query)
 
-def db_update_validity_rules_from_category_rules(cur, module_names):
-    category_rules = db_get_category_rules_dict(cur)
-    validity_rules = db_get_validity_rules_dict(cur)
-    for category in category_rules.keys():
-        for module_name in module_names:
-            if category not in validity_rules.keys() or module_name not in validity_rules[category].keys():
-                print(f"Adding {category}, {module_name} = 2")
-                db_set_validity_rule(cur, category, module_name, 2)
-
-
-# Retrieve data
-def db_get_df_from_table(cur, table, prefix=""):
-    query = f"SELECT * FROM {table}"
-    cur.execute(query)
-    rows = cur.fetchall()
-    colnames = [f"{prefix}{desc[0]}" for desc in cur.description]
-    df = pl.from_records(rows, schema=colnames, orient="row",  infer_schema_length=500)
-    return df
-
-def db_get_category_rules_dict(cur):
-    query = "SELECT category, regex FROM category_rules"
-    cur.execute(query)
-    category_rules = {k:v for k, v in cur.fetchall()}
-    return category_rules
-
 def db_get_validity_rules_dict(cur):
-    if not db_is_table(cur, "validity_rules"):
-        create_table_validity_rules(cur)
     query = "SELECT category, module, value FROM validity_rules"
     cur.execute(query)
     rows = cur.fetchall()
@@ -230,11 +229,55 @@ def db_get_validity_rules_dict(cur):
         validity_rules[row[0]][row[1]] = row[2]
     return validity_rules
 
-def db_get_modules(cur, value=[0, 1]):
-    value = map(str, value)
-    query = f"SELECT * FROM modules WHERE value in ({','.join(value)})"
+def db_get_validity_rules_list(cur):
+    query = "SELECT category, module, value FROM validity_rules"
     cur.execute(query)
-    return cur.fetchall()
+    validity_rules_list = cur.fetchall()
+    return validity_rules_list
+
+def db_update_validity_rules_from_db(cur, module_names):
+    # Add missing rules
+    category_rules = db_get_category_rules_dict(cur)
+    validity_rules = db_get_validity_rules_dict(cur)
+    for category in category_rules.keys():
+        for module_name in module_names:
+            if category not in validity_rules.keys() or module_name not in validity_rules[category].keys():
+                db_set_validity_rule(cur, category, module_name, 2)
+
+    # Remove rules from module not in module_names
+    module_names = [f"'{module_name}'" for module_name in module_names]
+    query = f"DELETE FROM validity_rules WHERE module NOT IN ({','.join(module_names)})"
+    cur.execute(query)
+
+# Single device
+def db_device_exist_in(cur, device, module_names):
+    subqueries = [f"EXISTS (SELECT 1 FROM {module_name} WHERE device = '{device}') AS in_{module_name}" for module_name in module_names]
+    query = f"SELECT {','.join(subqueries)};"
+    cur.execute(query)
+    device_exist_in = {module_name: is_in for module_name, is_in in zip(module_names, cur.fetchall()[0])}
+    return device_exist_in
+
+def db_get_device_serial_numbers(cur, device, module_names):
+    device_serial_numbers = {}
+    for module_name in module_names:
+        table_col_names = db_get_table_col_names(cur, module_name)
+        if "serial_number" not in table_col_names:
+            device_serial_numbers[module_name] = []
+        else:
+            query = f"SELECT serial_number FROM {module_name} WHERE device = '{device}'"
+            cur.execute(query)
+            device_serial_numbers[module_name] = [row[0] for row in cur.fetchall()]
+    return device_serial_numbers
+
+
+# Other
+def db_get_df_from_table(cur, table, prefix=""):
+    query = f"SELECT * FROM {table}"
+    cur.execute(query)
+    rows = cur.fetchall()
+    colnames = [f"{prefix}{desc[0]}" for desc in cur.description]
+    df = pl.from_records(rows, schema=colnames, orient="row",  infer_schema_length=500)
+    return df
 
 def db_get_table_col_names(cur, table):
     query = f"SELECT name FROM pragma_table_info('{table}');"
@@ -258,27 +301,3 @@ def db_is_table_empty(cur, table):
     if not cur.fetchall():
         return True
     return False
-
-def db_get_module_state(cur, module_name):
-    query = f"SELECT value FROM modules WHERE name = '{module_name}'"
-    cur.execute(query)
-    return cur.fetchone()[0]
-
-def db_device_exist_in(cur, device, module_names):
-    subqueries = [f"EXISTS (SELECT 1 FROM {module_name} WHERE device = '{device}') AS in_{module_name}" for module_name in module_names]
-    query = f"SELECT {','.join(subqueries)};"
-    cur.execute(query)
-    device_exist_in = {module_name: is_in for module_name, is_in in zip(module_names, cur.fetchall()[0])}
-    return device_exist_in
-
-def db_get_device_serial_numbers(cur, device, module_names):
-    device_serial_numbers = {}
-    for module_name in module_names:
-        table_col_names = db_get_table_col_names(cur, module_name)
-        if "serial_number" not in table_col_names:
-            device_serial_numbers[module_name] = []
-        else:
-            query = f"SELECT serial_number FROM {module_name} WHERE device = '{device}'"
-            cur.execute(query)
-            device_serial_numbers[module_name] = [row[0] for row in cur.fetchall()]
-    return device_serial_numbers

@@ -14,7 +14,7 @@ def execute_query_safe(cur, query):
     except:
         return jsonify({'status': 'error', 'message': f'Error executing: {query}'}), 500
 
-def get_validity_rules_safe(cur):
+def get_validity_rules_dict_safe(cur):
     try:
         validity_rules = db_get_validity_rules_dict(cur)
         return validity_rules
@@ -59,6 +59,7 @@ def set_module_state(module_name, state):
 def modules():
     all_modules = get_all_modules()
     return render_template("modules.html", all_modules=all_modules)
+
 
 # By tools
 @app.route("/update_devices/<tab_id>")
@@ -137,6 +138,16 @@ def set_category_rules(category, regex):
     cur.close()
     return jsonify({'status': 'success'}), 200
 
+@app.route("/del_category_rule/<category>")
+def del_category_rule(category):
+    cur = DB_CON.cursor()
+
+    db_del_category_rule(cur, category)
+    DB_CON.commit()
+
+    cur.close()
+    return jsonify({'status': 'success'}), 200
+
 # Validity rules
 @app.route("/update_validity_rules", methods=['POST'])
 def update_validity_rules():
@@ -161,12 +172,28 @@ def set_validity_rule(category, tool, value):
     cur.close()
     return jsonify({'status': 'success'}), 200
 
+@app.route("/get_validity_rules")
+def get_validity_rules():
+    cur = DB_CON.cursor()
+
+    activated_modules = [
+        {
+            "name": module.name,
+            "display_name": module.display_name
+        } for module in get_activated_modules()
+    ]
+    validity_rules = db_get_validity_rules_dict(cur)
+
+    cur.close()
+    return jsonify({'rules': validity_rules, 'activated_modules': activated_modules})
+
+
 # All devices
 @app.route("/get_all_devices")
 def get_all_devices():
     cur = DB_CON.cursor()
 
-    validity_rules = get_validity_rules_safe(cur)
+    validity_rules = get_validity_rules_dict_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
 
     cur.close()
@@ -180,7 +207,7 @@ def merged():
     for module in activated_modules:
         module.load_data_from_db()
     category_rules = get_category_rules_safe(cur)
-    validity_rules = get_validity_rules_safe(cur)
+    validity_rules = get_validity_rules_dict_safe(cur)
     df_device = get_df_device_safe(cur, validity_rules)
 
     cur.close()

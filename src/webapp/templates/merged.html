@@ -44,7 +44,6 @@
                     <input id="input-regex" type="text" class="form-control" placeholder="Regex" aria-label="Regex" aria-describedby="regex">
                     <button type="button" class="btn btn-success" onclick="addCategoryRule()">+</button>
                 </span>
-                <button class="btn btn-primary" onclick="commitCategoryRules()">Update rules</button>
             </div>
         </div>
     </div>
@@ -52,10 +51,10 @@
 
 
 <!-- Edit validity rules -->
-<button type="button btn-primary" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-validity-rules">
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-validity-rules">
   Edit validity rules
 </button>
-<div class="modal fade" id="edit-validity-rules" tabindex="-1" aria-labelledby="edit-validity-rules-label" aria-hidden="true">
+<div class="modal fade" id="edit-validity-rules" tabindex="-1" aria-labelledby="edit-validity-rules-rules" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -63,33 +62,9 @@
             </div>
             <div class="modal-body">
                 <table id="edit-validity-rules-table" class="table table-striped table-bordered table-sm table-edit-validity-rule">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            {% for module in activated_modules %}
-                            <th>{{ module.display_name }}</th>
-                            {% endfor %}
-                        </tr>
+                    <thead id="edit-validity-rules-thead">
                     </thead>
-                    <tbody>
-                        {% for category, table_dict in validity_rules.items() %}
-                        <tr>
-                            <td>{{ category }}</td>
-                            {% for module in activated_modules %}
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    id="{{ category }}_{{ module.name }}"
-                                    name="{{ category }}_{{ module.name }}"
-                                    data-category="{{ category }}"
-                                    data-tool="{{ module.name }}"
-                                    data-state={{ table_dict[module.name] }}
-                                    class="three-state"
-                                />
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
+                    <tbody id="edit-validity-rules-tbody">
                     </tbody>
                 </table>
                 <span><span style="color: green">✔</span>: Device should be in</span></br>
@@ -99,8 +74,6 @@
         </div>
     </div>
 </div>
-
-<!-- Column selector -->
 
 
 <!-- All devices -->
@@ -128,14 +101,8 @@
         refreshTabDevices('devices', false)
 
         // Input display
-        document.querySelectorAll('.three-state').forEach((checkbox) => {
-            validityRulesUpdateVisual(checkbox)
-            checkbox.addEventListener('click', (e) => {
-                e.preventDefault();
-                checkbox.dataset.state = (checkbox.dataset.state + 1) % 3;
-                validityRulesUpdateVisual(checkbox)
-                validityRulesChange(checkbox)
-            });
+        document.getElementById('edit-validity-rules').addEventListener('show.bs.modal', event => {
+            validityRulesModalUpdate()
         })
     })
 </script>
