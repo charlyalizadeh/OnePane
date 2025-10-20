@@ -30,24 +30,24 @@ python .\src\main.py
 
 ## Implemented tools
 
-[x] ActiveDirectory
-[ ] ManageEngine ActiveDirectory
-[x] ManageEngine Endpoint
-[ ] ManageEngine SFPOnDemand
-[ ] OneDrive (SharePoint, OneDrive, Exchange)
-[x] Intune
-[x] Microsoft Entra
-[x] Tenable
+* [x] ActiveDirectory
+* [ ] ManageEngine ActiveDirectory
+* [x] ManageEngine Endpoint
+* [ ] ManageEngine SFPOnDemand
+* [ ] OneDrive (SharePoint, OneDrive, Exchange)
+* [x] Intune
+* [x] Microsoft Entra
+* [x] Tenable
 
 ## Automated import tools
 
 The following tools have automated data import (through their API)
 
-[x] ActiveDirectory (`Get-ADComputer` PowerShell cmdlet)
-[ ] ManageEngine ActiveDirectory
-[ ] ManageEngine Endpoint
-[ ] ManageEngine SFPOnDemand
-[ ] OneDrive (SharePoint, OneDrive, Exchange)
-[x] Intune (Graph API)
-[x] Microsoft Entra (Graph API)
-[x] Tenable (Tenable API)
+* [x] ActiveDirectory (`Get-ADComputer` PowerShell cmdlet)
+* [ ] ManageEngine ActiveDirectory
+* [ ] ManageEngine Endpoint
+* [ ] ManageEngine SFPOnDemand
+* [ ] OneDrive (SharePoint, OneDrive, Exchange)
+* [x] Intune (Graph API)
+* [x] Microsoft Entra (Graph API)
+* [x] Tenable (Tenable API)
